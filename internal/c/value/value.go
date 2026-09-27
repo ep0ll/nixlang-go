@@ -11,6 +11,7 @@ package value
 import "C"
 import (
 	"runtime"
+	"sync"
 	"unsafe"
 
 	cexpr "github.com/ep0ll/nixlang-go/internal/c/expr"
@@ -36,8 +37,10 @@ const (
 )
 
 // Value wraps a GC-managed nix_value.
+// Decref is idempotent; always call Close/Decref explicitly — finalizers are a backup only.
 type Value struct {
-	ptr *C.nix_value
+	ptr  *C.nix_value
+	once sync.Once
 }
 
 // ListBuilder wraps ListBuilder.
@@ -96,13 +99,18 @@ func (v *Value) Incref(ctx *cutil.Context) cutil.Err {
 	return cutil.FromCErr(C.nix_value_incref(ctx.Ptr(), v.ptr))
 }
 
-// Decref decrements the GC refcount.
+// Decref decrements the GC refcount. Idempotent; safe with concurrent finalizer.
 func (v *Value) Decref() {
-	if v != nil && v.ptr != nil {
-		C.nix_value_decref(nil, v.ptr)
-		v.ptr = nil
-		runtime.SetFinalizer(v, nil)
+	if v == nil {
+		return
 	}
+	v.once.Do(func() {
+		if v.ptr != nil {
+			C.nix_value_decref(nil, v.ptr)
+			v.ptr = nil
+		}
+		runtime.SetFinalizer(v, nil)
+	})
 }
 
 // Type returns the value type.
