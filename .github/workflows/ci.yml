@@ -14,7 +14,11 @@ concurrency:
 jobs:
   unit:
     name: Unit tests (CGO off / stubs)
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -27,19 +31,26 @@ jobs:
         env:
           CGO_ENABLED: "0"
         run: |
-          go test ./util ./value ./expr ./store ./fetchers ./flake ./external ./nixmain -count=1
+          go test ./util ./value ./expr ./store ./fetchers ./flake ./external ./nixmain ./dag ./internal/c/util -count=1
+
+      - name: Short fuzz (pure Go)
+        env:
+          CGO_ENABLED: "0"
+        run: |
+          go test ./util -fuzz=FuzzNixErrorIs -fuzztime=5s -count=1
+          go test ./value -fuzz=FuzzTypeString -fuzztime=5s -count=1
 
       - name: Vet
         env:
           CGO_ENABLED: "0"
         run: |
-          go vet ./util ./value ./expr ./store ./fetchers ./flake ./external ./nixmain
+          go vet ./util ./value ./expr ./store ./fetchers ./flake ./external ./nixmain ./dag
 
       - name: Build library packages
         env:
           CGO_ENABLED: "0"
         run: |
-          go build ./util ./value ./expr ./store ./fetchers ./flake ./external ./nixmain
+          go build ./util ./value ./expr ./store ./fetchers ./flake ./external ./nixmain ./dag
 
   fmt:
     name: Format check
@@ -59,6 +70,9 @@ jobs:
           fi
           echo "gofmt clean"
 
+  # Native job is mandatory: check-capi failure or integration test failure
+  # fails the workflow. No fallback to CGO=0 (see COMPAT.md).
+  # Race detector requires CGO on Linux, so it runs inside this job.
   nix-capi:
     name: Nix C API build and tests
     runs-on: ubuntu-latest
@@ -70,17 +84,60 @@ jobs:
 
       - uses: DeterminateSystems/magic-nix-cache-action@main
 
-      - name: Enter flake and verify C API
+      - name: Verify C API, build, and run integration tests
         run: |
           nix develop --command bash -c '
             set -euo pipefail
             export CGO_ENABLED=1
             echo "Nix: $(nix --version || true)"
-            if ./scripts/check-capi.sh; then
-              echo "check-capi OK"
-              go test -tags=nix ./... -count=1
-            else
-              echo "::warning::check-capi failed — falling back to CGO=0 unit tests"
-              CGO_ENABLED=0 go test ./util ./value -count=1
-            fi
+            echo "PKG_CONFIG_PATH=${PKG_CONFIG_PATH:-}"
+            ./scripts/check-capi.sh
+            echo "check-capi OK"
+            go build -tags=nix ./...
+            go test -tags=nix ./... -count=1
+            go test -race -tags=nix ./util ./value ./expr ./store ./fetchers ./flake -count=1
+            # Short native fuzz (bounded inputs; must not crash)
+            go test -tags=nix ./store -fuzz=FuzzParsePath -fuzztime=10s -count=1
+            go test -tags=nix ./flake -fuzz=FuzzParseReference -fuzztime=10s -count=1
+          '
+
+  # Second native source: nixpkgs nix (release line) without building Nix master.
+  # Primary ABI remains the flake.lock pin; this catches drift against packaged C API.
+  nix-capi-nixpkgs:
+    name: Nix C API (nixpkgs package)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: DeterminateSystems/nix-installer-action@main
+
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Build and test against nixpkgs nix
+        run: |
+          set -euo pipefail
+          nix shell \
+            nixpkgs#go \
+            nixpkgs#pkg-config \
+            nixpkgs#gcc \
+            --command ./scripts/check-capi-nixpkgs.sh
+
+  # Optional ASan — does not block merges; run on main pushes and manual dispatch.
+  asan:
+    name: AddressSanitizer (optional)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: ASan tests
+        run: |
+          nix develop --command bash -c '
+            set -euo pipefail
+            export CGO_ENABLED=1
+            ./scripts/check-asan.sh || echo "ASan run finished with status $?"
           '
