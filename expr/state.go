@@ -6,6 +6,7 @@ package expr
 
 import (
 	"fmt"
+	"os"
 	"unsafe"
 
 	cexpr "github.com/ep0ll/nixlang-go/internal/c/expr"
@@ -144,6 +145,17 @@ func (s *State) EvalString(exprStr, path string) (*value.Value, error) {
 		return nil, err
 	}
 	return v, nil
+}
+
+// EvalFile reads path and evaluates its contents as a Nix expression.
+// Relative imports resolve against the file's directory.
+// Evaluation only — does not run nix build/develop or any CLI command.
+func (s *State) EvalFile(path string) (*value.Value, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("nix: read %s: %w", path, err)
+	}
+	return s.EvalString(string(data), path)
 }
 
 // Call applies a Nix function to a single argument.
