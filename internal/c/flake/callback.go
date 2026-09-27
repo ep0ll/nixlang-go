@@ -12,6 +12,7 @@ import (
 
 //export cgoFlakeStringCB
 func cgoFlakeStringCB(start *C.char, n C.uint, userData unsafe.Pointer) {
+	defer func() { recover() }()
 	if userData == nil {
 		return
 	}

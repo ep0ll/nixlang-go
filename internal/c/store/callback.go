@@ -16,6 +16,7 @@ import (
 
 //export cgoStoreStringCB
 func cgoStoreStringCB(start *C.char, n C.uint, userData unsafe.Pointer) {
+	defer func() { recover() }()
 	if userData == nil {
 		return
 	}
@@ -48,6 +49,7 @@ func unregisterRealiseCB(id uintptr) {
 
 //export cgoRealiseCB
 func cgoRealiseCB(userdata unsafe.Pointer, outname *C.char, out *C.StorePath) {
+	defer func() { recover() }()
 	id := uintptr(userdata)
 	realiseMu.Lock()
 	cb := realiseSlots[id]
