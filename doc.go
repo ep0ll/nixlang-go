@@ -17,4 +17,15 @@
 // This module evaluates Nix expressions and interacts with stores/flakes via
 // the C library only. It does not execute `nix build`, `nix develop`, or other
 // CLI commands.
+//
+// # Concurrency
+//
+// A util.Context, store.Store, and expr.State must not be shared across
+// goroutines without external synchronization. Prefer one Context/State pair
+// per goroutine. Global string-callback slot maps are mutex-protected.
+//
+// # Resource lifetime
+//
+// Call Close() on Context, Store, State, Value, and related objects. Finalizers
+// are a safety net only; do not rely on them for timely cleanup.
 package nixgo

@@ -12,7 +12,13 @@
 nix develop
 export CGO_ENABLED=1
 go build ./...
-go test ./...
+
+# Pure unit tests (no Nix C libraries required)
+go test ./util ./value
+
+# Integration tests against the Nix C API (dummy store, eval only)
+go test -tags=nix ./...
+
 go run ./examples/eval '1 + 1'
 ```
 
