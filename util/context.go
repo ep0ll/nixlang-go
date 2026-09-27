@@ -3,6 +3,7 @@
 package util
 
 import (
+	"errors"
 	"fmt"
 
 	cutil "github.com/ep0ll/nixlang-go/internal/c/util"
@@ -108,6 +109,39 @@ func (e *NixError) Error() string {
 	return fmt.Sprintf("nix: error code %d", e.Code)
 }
 
+// Is reports whether target is a *NixError with the same Code.
+// Enables errors.Is(err, &NixError{Code: util.ErrKey}).
+func (e *NixError) Is(target error) bool {
+	t, ok := target.(*NixError)
+	if !ok || e == nil || t == nil {
+		return false
+	}
+	return e.Code == t.Code
+}
+
+// AsNixError extracts *NixError from err via errors.As.
+func AsNixError(err error) (*NixError, bool) {
+	var ne *NixError
+	if errors.As(err, &ne) {
+		return ne, true
+	}
+	return nil, false
+}
+
+// IsRecoverable reports whether err is NIX_ERR_RECOVERABLE
+// (e.g. a failed primop that the evaluator may retry).
+func IsRecoverable(err error) bool {
+	ne, ok := AsNixError(err)
+	return ok && ne.Code == ErrRecoverable
+}
+
+// IsKeyError reports whether err is NIX_ERR_KEY
+// (missing attr, out-of-range index, unknown setting).
+func IsKeyError(err error) bool {
+	ne, ok := AsNixError(err)
+	return ok && ne.Code == ErrKey
+}
+
 // Init initializes libutil. Must be called before other Nix API use.
 func Init(ctx *Context) error {
 	return ctx.Check(ErrorCode(cutil.Init(ctx.Internal())))
@@ -118,7 +152,12 @@ func Version() string {
 	return cutil.Version()
 }
 
-// GetSetting reads a Nix configuration setting.
+// SetSetting sets a Nix configuration setting.
+func SetSetting(ctx *Context, key, value string) error {
+	return ctx.Check(ErrorCode(cutil.SettingSet(ctx.Internal(), key, value)))
+}
+
+// GetSetting retrieves a Nix configuration setting.
 func GetSetting(ctx *Context, key string) (string, error) {
 	v, code := cutil.SettingGet(ctx.Internal(), key)
 	if err := ctx.Check(ErrorCode(code)); err != nil {
@@ -127,12 +166,12 @@ func GetSetting(ctx *Context, key string) (string, error) {
 	return v, nil
 }
 
-// SetSetting writes a Nix configuration setting.
-func SetSetting(ctx *Context, key, value string) error {
-	return ctx.Check(ErrorCode(cutil.SettingSet(ctx.Internal(), key, value)))
+// SetVerbosity sets the global log verbosity.
+func SetVerbosity(ctx *Context, level Verbosity) error {
+	return ctx.Check(ErrorCode(cutil.SetVerbosity(ctx.Internal(), cutil.Verbosity(level))))
 }
 
-// Verbosity is a logging verbosity level.
+// Verbosity is a log verbosity level.
 type Verbosity int
 
 const (
@@ -145,8 +184,3 @@ const (
 	LvlDebug     Verbosity = Verbosity(cutil.LvlDebug)
 	LvlVomit     Verbosity = Verbosity(cutil.LvlVomit)
 )
-
-// SetVerbosity sets the global Nix verbosity level.
-func SetVerbosity(ctx *Context, level Verbosity) error {
-	return ctx.Check(ErrorCode(cutil.SetVerbosity(ctx.Internal(), cutil.Verbosity(level))))
-}

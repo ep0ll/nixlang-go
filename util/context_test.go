@@ -38,3 +38,29 @@ func TestErrorCodeConstants(t *testing.T) {
 		t.Fatalf("OK should be 0, got %d", util.OK)
 	}
 }
+
+func TestNixErrorIs(t *testing.T) {
+	e1 := &util.NixError{Code: util.ErrKey, Msg: "a"}
+	e2 := &util.NixError{Code: util.ErrKey, Msg: "b"}
+	e3 := &util.NixError{Code: util.ErrOverflow, Msg: "c"}
+	if !errors.Is(e1, e2) {
+		t.Fatal("same Code should match via errors.Is")
+	}
+	if errors.Is(e1, e3) {
+		t.Fatal("different Code should not match")
+	}
+	if !util.IsKeyError(e1) {
+		t.Fatal("IsKeyError")
+	}
+	if util.IsRecoverable(e1) {
+		t.Fatal("ErrKey is not recoverable")
+	}
+	rec := &util.NixError{Code: util.ErrRecoverable, Msg: "retry"}
+	if !util.IsRecoverable(rec) {
+		t.Fatal("IsRecoverable")
+	}
+	ne, ok := util.AsNixError(e1)
+	if !ok || ne.Code != util.ErrKey {
+		t.Fatal("AsNixError")
+	}
+}
