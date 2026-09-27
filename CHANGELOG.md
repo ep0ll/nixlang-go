@@ -20,6 +20,10 @@ may change when header signatures change.
 - `scripts/check-capi.sh` and improved `flake.nix` / `BUILD.md`
 - GitHub Actions unit-test workflow
 - Full LGPL-2.1 `LICENSE` text
+- `examples/flake` parse-only demo
+- `value.TypeName`, `CopyFrom`, `RealiseString` (string context)
+- Panic recovery in all cgo `//export` callbacks
+- `flake` parse integration test (`cgo && nix`)
 
 ### Guarantees
 
