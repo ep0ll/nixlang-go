@@ -14,24 +14,30 @@ extern void cgoRealiseCB(void *userdata, const char *outname, const StorePath *o
 import "C"
 import (
 	"runtime"
+	"sync"
 	"unsafe"
 
 	cutil "github.com/ep0ll/nixlang-go/internal/c/util"
 )
 
 // Store wraps a Nix store handle.
+// Free is safe to call multiple times (sync.Once); prefer explicit Free over relying on finalizers.
 type Store struct {
-	ptr *C.Store
+	ptr  *C.Store
+	once sync.Once
 }
 
 // StorePath wraps a store path.
+// Paths passed to realise callbacks are borrowed; Clone before retaining them.
 type StorePath struct {
-	ptr *C.StorePath
+	ptr  *C.StorePath
+	once sync.Once
 }
 
 // Derivation wraps nix_derivation.
 type Derivation struct {
-	ptr *C.nix_derivation
+	ptr  *C.nix_derivation
+	once sync.Once
 }
 
 // Init initializes libstore.
@@ -45,17 +51,26 @@ func InitNoConfig(ctx *cutil.Context) cutil.Err {
 }
 
 // Open opens a store.
-// uri may be "" for the default store.
-// params is currently reserved; pass nil. Prefer util.SetSetting / store URI query params.
+//
+// uri may be "" or NULL-equivalent for the default store from settings.
+// params is a map of store-specific options (e.g. {"endpoint": "https://s3.local"}).
+// It is encoded as a null-terminated const char *** of key/value pairs matching
+// nix_store_open on Nix master.
 func Open(ctx *cutil.Context, uri string, params map[string]string) *Store {
 	var curi *C.char
 	if uri != "" {
 		curi = C.CString(uri)
 		defer C.free(unsafe.Pointer(curi))
 	}
-	// Store open params (const char ***) are version-sensitive; use URI/settings instead.
-	_ = params
-	p := C.nix_store_open(ctx.Ptr(), curi, nil)
+
+	var cparams ***C.char
+	var freeParams func()
+	if len(params) > 0 {
+		cparams, freeParams = encodeStoreParams(params)
+		defer freeParams()
+	}
+
+	p := C.nix_store_open(ctx.Ptr(), curi, cparams)
 	if p == nil {
 		return nil
 	}
@@ -64,13 +79,54 @@ func Open(ctx *cutil.Context, uri string, params map[string]string) *Store {
 	return s
 }
 
-// Free releases the store.
-func (s *Store) Free() {
-	if s != nil && s.ptr != nil {
-		C.nix_store_free(s.ptr)
-		s.ptr = nil
-		runtime.SetFinalizer(s, nil)
+// encodeStoreParams builds a null-terminated array of {key, value} pairs for
+// nix_store_open. C walks params[i] until NULL; each params[i] is char** with
+// [0]=key and [1]=value (see nix_api_store.cc on Nix master).
+func encodeStoreParams(params map[string]string) (***C.char, func()) {
+	n := len(params)
+	if n == 0 {
+		return nil, func() {}
 	}
+
+	type kv struct{ key, val *C.char }
+	kvs := make([]kv, 0, n)
+	for k, v := range params {
+		kvs = append(kvs, kv{C.CString(k), C.CString(v)})
+	}
+
+	pairStorage := make([][2]*C.char, n)
+	cPairs := make([]**C.char, n+1)
+	for i, p := range kvs {
+		pairStorage[i][0] = p.key
+		pairStorage[i][1] = p.val
+		cPairs[i] = &pairStorage[i][0]
+	}
+	cPairs[n] = nil
+
+	root := (***C.char)(unsafe.Pointer(&cPairs[0]))
+	free := func() {
+		for _, p := range kvs {
+			C.free(unsafe.Pointer(p.key))
+			C.free(unsafe.Pointer(p.val))
+		}
+		runtime.KeepAlive(pairStorage)
+		runtime.KeepAlive(cPairs)
+	}
+	return root, free
+}
+
+// Free releases the store. Idempotent; safe with concurrent finalizer.
+func (s *Store) Free() {
+	if s == nil {
+		return
+	}
+	s.once.Do(func() {
+		if s.ptr != nil {
+			C.nix_store_free(s.ptr)
+			s.ptr = nil
+		}
+		runtime.SetFinalizer(s, nil)
+	})
 }
 
 // Ptr returns the C pointer.
@@ -202,13 +258,18 @@ func (s *Store) AddDerivation(ctx *cutil.Context, d *Derivation) *StorePath {
 
 // --- StorePath ---
 
-// Free releases a StorePath.
+// Free releases a StorePath. Idempotent.
 func (p *StorePath) Free() {
-	if p != nil && p.ptr != nil {
-		C.nix_store_path_free(p.ptr)
-		p.ptr = nil
-		runtime.SetFinalizer(p, nil)
+	if p == nil {
+		return
 	}
+	p.once.Do(func() {
+		if p.ptr != nil {
+			C.nix_store_path_free(p.ptr)
+			p.ptr = nil
+		}
+		runtime.SetFinalizer(p, nil)
+	})
 }
 
 // Ptr returns the C pointer.
@@ -271,12 +332,18 @@ func CreateFromParts(ctx *cutil.Context, hash [20]byte, name string) *StorePath 
 
 // --- Derivation ---
 
+// Free releases the derivation. Idempotent.
 func (d *Derivation) Free() {
-	if d != nil && d.ptr != nil {
-		C.nix_derivation_free(d.ptr)
-		d.ptr = nil
-		runtime.SetFinalizer(d, nil)
+	if d == nil {
+		return
 	}
+	d.once.Do(func() {
+		if d.ptr != nil {
+			C.nix_derivation_free(d.ptr)
+			d.ptr = nil
+		}
+		runtime.SetFinalizer(d, nil)
+	})
 }
 
 func (d *Derivation) Ptr() *C.nix_derivation {
