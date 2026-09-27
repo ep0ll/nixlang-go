@@ -41,9 +41,9 @@ func InitNoConfig(ctx *util.Context) error {
 //
 // uri examples: "", "auto", "daemon", "local", "dummy://", "ssh://host".
 //
-// params is reserved for future store-open key/value pairs matching the C API
-// (const char ***). Today it is ignored; configure the store via the URI
-// (including query parameters) or util.SetSetting before Open.
+// params are store-specific options passed to nix_store_open as key/value pairs
+// (e.g. map[string]string{"endpoint": "https://s3.local"}). See Nix store types
+// documentation. Options may also be embedded in the URI query string.
 func Open(ctx *util.Context, uri string, params map[string]string) (*Store, error) {
 	s := cstore.Open(ctx.Internal(), uri, params)
 	if s == nil {
@@ -128,7 +128,9 @@ func (s *Store) RealPath(path *Path) (string, error) {
 }
 
 // Realise builds/realises a derivation or path.
-// The callback receives each output name and path (borrowed for the callback duration).
+//
+// The callback receives each output name and path. Paths are borrowed for the
+// duration of the callback only — call out.Clone() if you need to retain them.
 func (s *Store) Realise(path *Path, cb func(outname string, out *Path)) error {
 	code := s.c.Realise(s.ctx.Internal(), path.c, func(name string, sp *cstore.StorePath) {
 		var p *Path
@@ -201,9 +203,25 @@ func (p *Path) Internal() *cstore.StorePath {
 	return p.c
 }
 
-// Name returns the name component of the store path.
+// Name returns the name component of the store path
+// (the part after the hash in /nix/store/<hash>-<name>).
 func (p *Path) Name() string {
+	if p == nil || p.c == nil {
+		return ""
+	}
 	return p.c.Name()
+}
+
+// String returns a human-readable short form of the path (the name component).
+// For a full filesystem path, use Store.RealPath. For the 20-byte hash, use Hash.
+func (p *Path) String() string {
+	if p == nil || p.c == nil {
+		return "<nil Path>"
+	}
+	if n := p.Name(); n != "" {
+		return n
+	}
+	return "<store path>"
 }
 
 // Hash returns the 20-byte hash part of the store path.
@@ -216,7 +234,11 @@ func (p *Path) Hash(ctx *util.Context) ([20]byte, error) {
 }
 
 // Clone returns an independent copy of the path.
+// Use after Realise callbacks if you need to retain an output path.
 func (p *Path) Clone() *Path {
+	if p == nil || p.c == nil {
+		return nil
+	}
 	c := p.c.Clone()
 	if c == nil {
 		return nil
