@@ -40,8 +40,10 @@ const (
 )
 
 // Context wraps nix_c_context.
+// Free is idempotent (sync.Once); always call Free/Close explicitly.
 type Context struct {
-	ptr *C.nix_c_context
+	ptr  *C.nix_c_context
+	once sync.Once
 }
 
 // NewContext allocates a new error context.
@@ -60,13 +62,18 @@ func (c *Context) Ptr() *C.nix_c_context {
 	return c.ptr
 }
 
-// Free releases the context.
+// Free releases the context. Idempotent; safe with concurrent finalizer.
 func (c *Context) Free() {
-	if c != nil && c.ptr != nil {
-		C.nix_c_context_free(c.ptr)
-		c.ptr = nil
-		runtime.SetFinalizer(c, nil)
+	if c == nil {
+		return
 	}
+	c.once.Do(func() {
+		if c.ptr != nil {
+			C.nix_c_context_free(c.ptr)
+			c.ptr = nil
+		}
+		runtime.SetFinalizer(c, nil)
+	})
 }
 
 // Code returns the last error code.
