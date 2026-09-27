@@ -38,8 +38,12 @@ func InitNoConfig(ctx *util.Context) error {
 }
 
 // Open opens a Nix store.
+//
 // uri examples: "", "auto", "daemon", "local", "dummy://", "ssh://host".
-// params are optional store parameters (currently reserved; prefer URI query or util.SetSetting).
+//
+// params is reserved for future store-open key/value pairs matching the C API
+// (const char ***). Today it is ignored; configure the store via the URI
+// (including query parameters) or util.SetSetting before Open.
 func Open(ctx *util.Context, uri string, params map[string]string) (*Store, error) {
 	s := cstore.Open(ctx.Internal(), uri, params)
 	if s == nil {
