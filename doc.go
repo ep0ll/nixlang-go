@@ -9,7 +9,7 @@
 //	github.com/ep0ll/nixlang-go/fetchers  — fetcher settings
 //	github.com/ep0ll/nixlang-go/flake     — flake refs, lock, outputs
 //	github.com/ep0ll/nixlang-go/external  — foreign values
-//	github.com/ep0ll/nixlang-go/main      — plugins, log format
+//	github.com/ep0ll/nixlang-go/nixmain  — plugins, log format
 //
 // Low-level cgo bindings live under internal/c/* and are not part of the
 // stable public API.
