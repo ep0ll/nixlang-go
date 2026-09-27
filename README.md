@@ -6,8 +6,8 @@ Idiomatic, production-ready Go bindings for the experimental [Nix C API](https:/
 
 | Layer | Package path | Role |
 |-------|--------------|------|
-| Low-level cgo | `internal/c/{util,store,expr,value,external,fetchers,flake,main}` | Thin C bindings |
-| High-level | `util`, `store`, `expr`, `value`, `external`, `fetchers`, `flake`, `main` | Safe Go APIs |
+| Low-level cgo | `internal/c/{util,store,expr,value,external,fetchers,flake,nixmain}` | Thin C bindings |
+| High-level | `util`, `store`, `expr`, `value`, `external`, `fetchers`, `flake`, `nixmain` | Safe Go APIs |
 
 **This library evaluates Nix expressions and talks to stores/flakes programmatically.** It does **not** shell out to `nix build`, `nix develop`, or other CLI commands.
 
@@ -20,7 +20,7 @@ Idiomatic, production-ready Go bindings for the experimental [Nix C API](https:/
 
 ```bash
 nix develop   # from this flake
-go test ./...
+go test -tags=nix ./...
 go run ./examples/eval
 ```
 
@@ -81,7 +81,7 @@ func must(err error) {
 | **fetchers** | Fetcher settings |
 | **flake** | Settings, parse refs, lock modes, output attrs |
 | **external** | Foreign values |
-| **main** | Plugins, log format |
+| **nixmain** | Plugins, log format (named to avoid `package main` clash) |
 
 ## Stability
 
