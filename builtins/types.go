@@ -1,5 +1,4 @@
-// Package builtins defines the Go-side argument types used by the generated
-// Nix builtin wrappers.
+// Package builtins defines statically typed Go argument types for Nix builtins.
 package builtins
 
 import (
@@ -11,28 +10,29 @@ import (
 	"github.com/ep0ll/nixlang-go/value"
 )
 
-
-// PathLike is the closed union of Nix path values and plain string paths.
-// Use FilePath for a Nix path value and StringPath for a Nix string containing
-// a path. Nix distinguishes these two value kinds.
+// PathLike is the closed union of a Nix path value and a Nix string containing
+// a path. Use Path for the former and StringPath for the latter.
 type PathLike interface {
 	nixPathLike() any
 }
 
-// StringPath represents a path written as a Nix string, rather than a Nix path
-// literal.
+// StringPath represents a path passed to Nix as a string.
 type StringPath string
 
 func (p StringPath) nixPathLike() any { return string(p) }
 
-// FilePath constructs a Nix Path from an operating-system path. filepath.Clean
-// and filepath.ToSlash normalize host path syntax before it is passed to Nix.
+// FilePath normalizes a host filesystem path and marks it as a Nix path value.
+// filepath is used only for host-path normalization; the Nix value remains
+// distinct from a Nix string.
 func FilePath(path string) Path {
 	return Path(filepath.ToSlash(filepath.Clean(path)))
 }
 
-// HashAlgorithm uses Go's standard crypto.Hash identifiers while exposing
-// only the algorithms supported by Nix's hash builtins.
+// StorePath is a canonical Nix store path, not an arbitrary filesystem path.
+type StorePath string
+
+// HashAlgorithm reuses Go's standard crypto.Hash identifiers. Nix supports
+// only these four algorithms for hashFile, hashString, and convertHash.
 type HashAlgorithm = crypto.Hash
 
 const (
@@ -57,8 +57,8 @@ func hashAlgorithmName(algorithm crypto.Hash) (string, error) {
 	}
 }
 
-// HashFormat identifies the textual representation accepted by
-// builtins.convertHash.
+// HashFormat identifies the output representation accepted by
+// builtins.convertHash. The zero value is deliberately invalid.
 type HashFormat uint8
 
 const (
@@ -69,7 +69,7 @@ const (
 	HashFormatSRI
 )
 
-func (f HashFormat) nixString() string {
+func (f HashFormat) String() string {
 	switch f {
 	case HashFormatBase16:
 		return "base16"
@@ -84,13 +84,65 @@ func (f HashFormat) nixString() string {
 	}
 }
 
-// StorePath is a canonical Nix store path, not an arbitrary filesystem path.
-type StorePath string
+// Number is the integer-or-float union accepted by Nix arithmetic primops.
+type Number struct {
+	isFloat bool
+	integer int64
+	float   float64
+}
+
+// Integer constructs an integer Nix number.
+func Integer(n int64) Number { return Number{integer: n} }
+
+// Floating constructs a floating-point Nix number.
+func Floating(n float64) Number { return Number{isFloat: true, float: n} }
+
+// ComparisonValue is the number/string/path union accepted by builtins.lessThan.
+// Nix requires both operands to have the same comparable type.
+type ComparisonValue struct {
+	kind    comparisonKind
+	number  Number
+	text    string
+	path    Path
+}
+
+type comparisonKind uint8
+
+const (
+	comparisonInvalid comparisonKind = iota
+	comparisonNumber
+	comparisonString
+	comparisonPath
+)
+
+func CompareNumbers(n Number) ComparisonValue {
+	return ComparisonValue{kind: comparisonNumber, number: n}
+}
+
+func CompareStrings(s string) ComparisonValue {
+	return ComparisonValue{kind: comparisonString, text: s}
+}
+
+func ComparePaths(p Path) ComparisonValue {
+	return ComparisonValue{kind: comparisonPath, path: p}
+}
+
+// StringCoercible is the set of Go-side values that Nix can coerce to strings.
+// Construct values with StringValue, IntegerString, PathStringValue,
+// AttrStringValue, or ValueStringValue.
+type StringCoercible struct {
+	value any
+}
+
+func StringValue(s string) StringCoercible { return StringCoercible{value: s} }
+func IntegerString(n int64) StringCoercible { return StringCoercible{value: n} }
+func PathStringValue(p Path) StringCoercible { return StringCoercible{value: p} }
+func AttrStringValue(attrs AttrSet) StringCoercible { return StringCoercible{value: attrs} }
+func ValueStringValue(v *value.Value) StringCoercible { return StringCoercible{value: v} }
 
 // Function is an independently retained, checked Nix function value from the
-// same evaluator as Builtins. Create it with NewFunction and close it only
-// after higher-order calls and any lazy results that may reference the function
-// have been fully consumed.
+// same evaluator as Builtins. Keep it alive until lazy results that reference
+// it have been consumed.
 type Function struct {
 	value *value.Value
 }
@@ -126,23 +178,22 @@ func (f *Function) Close() {
 	f.value = nil
 }
 
-// Value returns a borrowed pointer to the retained evaluator value. Do not
-// close the returned value; call Function.Close instead.
-func (f Function) Value() *value.Value {
-	return f.value
-}
+// Value returns a borrowed pointer to the retained evaluator value.
+func (f Function) Value() *value.Value { return f.value }
 
-// AttrSet is a Nix attribute set whose values are recursively converted from
-// Go values. Use it for Nix APIs whose attribute names are open-ended.
+// AttrSet is a Nix attribute set whose values are recursively converted from Go.
 type AttrSet = map[string]any
 
-// AttrConvertible is implemented by the typed option structs in this package.
-// The returned AttrSet is converted recursively using the same Go-to-Nix rules
-// as Builtins.Call.
+// AttrConvertible describes a typed Go struct that converts to a Nix attrset.
 type AttrConvertible interface {
 	ToNixAttrs() AttrSet
 }
 
+// ArgumentValidator lets structured builtin arguments reject invalid
+// combinations before entering the evaluator.
+type ArgumentValidator interface {
+	Validate() error
+}
 
 // NameValue is one element accepted by builtins.listToAttrs.
 type NameValue struct {
@@ -154,7 +205,14 @@ func (a NameValue) ToNixAttrs() AttrSet {
 	return AttrSet{"name": a.Name, "value": a.Value}
 }
 
-// SearchPathEntry describes an entry supplied to builtins.findFile.
+func (a NameValue) Validate() error {
+	if a.Name == "" {
+		return fmt.Errorf("listToAttrs entry name must not be empty")
+	}
+	return nil
+}
+
+// SearchPathEntry describes one entry supplied to builtins.findFile.
 type SearchPathEntry struct {
 	Prefix string
 	Path   PathLike
@@ -168,19 +226,28 @@ func (e SearchPathEntry) ToNixAttrs() AttrSet {
 	return attrs
 }
 
-// PathArgs describes the structured form of builtins.path.
+func (e SearchPathEntry) Validate() error {
+	if e.Path == nil {
+		return fmt.Errorf("findFile search path entry requires a path")
+	}
+	return nil
+}
+
+// PathArgs describes the structured argument to builtins.path.
 type PathArgs struct {
 	Path      PathLike
-	Name      string   // Optional store name.
-	Filter    *Function // Optional Nix predicate (path: type: bool).
-	Recursive *bool    // Optional; nil uses Nix's default.
-	SHA256    string   // Optional expected SHA-256 hash.
-	Extra     AttrSet  // Reserved for forward-compatible extension fields.
+	Name      string
+	Filter    *Function
+	Recursive *bool
+	SHA256    string
+	Extra     AttrSet
 }
 
 func (a PathArgs) ToNixAttrs() AttrSet {
 	attrs := cloneAttrs(a.Extra)
-	attrs["path"] = a.Path
+	if a.Path != nil {
+		attrs["path"] = a.Path
+	}
 	if a.Name != "" {
 		attrs["name"] = a.Name
 	}
@@ -194,6 +261,13 @@ func (a PathArgs) ToNixAttrs() AttrSet {
 		attrs["sha256"] = a.SHA256
 	}
 	return attrs
+}
+
+func (a PathArgs) Validate() error {
+	if a.Path == nil {
+		return fmt.Errorf("path builtin requires Path")
+	}
+	return nil
 }
 
 // StringContextEntry describes the context flags for one store path in
@@ -221,8 +295,6 @@ func (e StringContextEntry) ToNixAttrs() AttrSet {
 // StringContext maps store paths to their Nix string-context metadata.
 type StringContext map[string]StringContextEntry
 
-// ToNixAttrs converts each store path entry to the attrset structure accepted
-// by builtins.appendContext.
 func (c StringContext) ToNixAttrs() AttrSet {
 	attrs := make(AttrSet, len(c))
 	for storePath, entry := range c {
@@ -243,13 +315,27 @@ func (a ConvertHashArgs) ToNixAttrs() AttrSet {
 	attrs := cloneAttrs(a.Extra)
 	attrs["hash"] = a.Hash
 	if a.HashAlgo != 0 {
-		algorithm, err := hashAlgorithmName(a.HashAlgo)
-		if err == nil {
+		if algorithm, err := hashAlgorithmName(a.HashAlgo); err == nil {
 			attrs["hashAlgo"] = algorithm
 		}
 	}
-	attrs["toHashFormat"] = a.ToHashFormat.nixString()
+	attrs["toHashFormat"] = a.ToHashFormat.String()
 	return attrs
+}
+
+func (a ConvertHashArgs) Validate() error {
+	if a.Hash == "" {
+		return fmt.Errorf("convertHash requires Hash")
+	}
+	if a.ToHashFormat.String() == "" {
+		return fmt.Errorf("convertHash requires a valid ToHashFormat")
+	}
+	if a.HashAlgo != 0 {
+		if _, err := hashAlgorithmName(a.HashAlgo); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // GenericClosureArgs describes the input to builtins.genericClosure.
@@ -264,6 +350,13 @@ func (a GenericClosureArgs) ToNixAttrs() AttrSet {
 	attrs["startSet"] = a.StartSet
 	attrs["operator"] = a.Operator
 	return attrs
+}
+
+func (a GenericClosureArgs) Validate() error {
+	if a.Operator.value == nil {
+		return fmt.Errorf("genericClosure requires Operator")
+	}
+	return nil
 }
 
 // FetchClosureArgs describes the structured form of builtins.fetchClosure.
@@ -288,6 +381,19 @@ func (a FetchClosureArgs) ToNixAttrs() AttrSet {
 	return attrs
 }
 
+func (a FetchClosureArgs) Validate() error {
+	if a.FromPath == "" {
+		return fmt.Errorf("fetchClosure requires FromPath")
+	}
+	if a.FromStore.Scheme == "" || a.FromStore.Host == "" {
+		return fmt.Errorf("fetchClosure requires an absolute FromStore URL")
+	}
+	if a.InputAddressed != nil && *a.InputAddressed && a.ToPath != nil {
+		return fmt.Errorf("fetchClosure cannot combine InputAddressed=true with ToPath")
+	}
+	return nil
+}
+
 // FetchURLArgs describes the attribute-set form of builtins.fetchurl.
 type FetchURLArgs struct {
 	URL    url.URL
@@ -298,12 +404,7 @@ type FetchURLArgs struct {
 
 func (a FetchURLArgs) ToNixAttrs() AttrSet {
 	attrs := cloneAttrs(a.Extra)
-	if a.URL != nil {
-		attrs["url"] = *a.URL
-	}
-	if a.Path != nil {
-		attrs["url"] = *a.Path
-	}
+	attrs["url"] = a.URL.String()
 	if a.Name != "" {
 		attrs["name"] = a.Name
 	}
@@ -311,6 +412,13 @@ func (a FetchURLArgs) ToNixAttrs() AttrSet {
 		attrs["sha256"] = a.SHA256
 	}
 	return attrs
+}
+
+func (a FetchURLArgs) Validate() error {
+	if a.URL.Scheme == "" {
+		return fmt.Errorf("fetchurl requires an absolute URL")
+	}
+	return nil
 }
 
 // FetchTarballArgs describes the attribute-set form of builtins.fetchTarball.
@@ -323,7 +431,7 @@ type FetchTarballArgs struct {
 
 func (a FetchTarballArgs) ToNixAttrs() AttrSet {
 	attrs := cloneAttrs(a.Extra)
-	attrs["url"] = a.URL
+	attrs["url"] = a.URL.String()
 	if a.SHA256 != "" {
 		attrs["sha256"] = a.SHA256
 	}
@@ -331,6 +439,13 @@ func (a FetchTarballArgs) ToNixAttrs() AttrSet {
 		attrs["name"] = a.Name
 	}
 	return attrs
+}
+
+func (a FetchTarballArgs) Validate() error {
+	if a.URL.Scheme == "" {
+		return fmt.Errorf("fetchTarball requires an absolute URL")
+	}
+	return nil
 }
 
 // FetchGitArgs describes the attribute-set form of builtins.fetchGit.
@@ -350,7 +465,7 @@ type FetchGitArgs struct {
 func (a FetchGitArgs) ToNixAttrs() AttrSet {
 	attrs := cloneAttrs(a.Extra)
 	if a.URL != nil {
-		attrs["url"] = *a.URL
+		attrs["url"] = a.URL.String()
 	}
 	if a.Path != nil {
 		attrs["url"] = *a.Path
@@ -379,6 +494,16 @@ func (a FetchGitArgs) ToNixAttrs() AttrSet {
 	return attrs
 }
 
+func (a FetchGitArgs) Validate() error {
+	if (a.URL == nil) == (a.Path == nil) {
+		return fmt.Errorf("fetchGit requires exactly one of URL or Path")
+	}
+	if a.URL != nil && a.URL.Scheme == "" {
+		return fmt.Errorf("fetchGit URL must be absolute")
+	}
+	return nil
+}
+
 // FetchMercurialArgs describes the attribute-set form of builtins.fetchMercurial.
 type FetchMercurialArgs struct {
 	URL   *url.URL
@@ -390,7 +515,12 @@ type FetchMercurialArgs struct {
 
 func (a FetchMercurialArgs) ToNixAttrs() AttrSet {
 	attrs := cloneAttrs(a.Extra)
-	attrs["url"] = a.URL
+	if a.URL != nil {
+		attrs["url"] = a.URL.String()
+	}
+	if a.Path != nil {
+		attrs["url"] = *a.Path
+	}
 	if a.Name != "" {
 		attrs["name"] = a.Name
 	}
@@ -400,10 +530,19 @@ func (a FetchMercurialArgs) ToNixAttrs() AttrSet {
 	return attrs
 }
 
-// FetchTreeArgs describes the attribute-set form of builtins.fetchTree.
-// URL and Path accept both builtins.Path and string because Nix fetcher input
-// attributes support path/string coercion. Extra carries backend-specific
-// input attributes not represented by the common fields.
+func (a FetchMercurialArgs) Validate() error {
+	if (a.URL == nil) == (a.Path == nil) {
+		return fmt.Errorf("fetchMercurial requires exactly one of URL or Path")
+	}
+	if a.URL != nil && a.URL.Scheme == "" {
+		return fmt.Errorf("fetchMercurial URL must be absolute")
+	}
+	return nil
+}
+
+// FetchTreeArgs describes the structured argument to builtins.fetchTree.
+// URL and Path are represented separately to preserve their Nix value kinds.
+// Extra carries backend-specific fetcher attributes.
 type FetchTreeArgs struct {
 	Type         string
 	URL          *url.URL
@@ -425,7 +564,7 @@ func (a FetchTreeArgs) ToNixAttrs() AttrSet {
 		attrs["type"] = a.Type
 	}
 	if a.URL != nil {
-		attrs["url"] = *a.URL
+		attrs["url"] = a.URL.String()
 	}
 	if a.Path != nil {
 		attrs["path"] = *a.Path
@@ -457,36 +596,97 @@ func (a FetchTreeArgs) ToNixAttrs() AttrSet {
 	return attrs
 }
 
-// FlakeRefAttrs describes the attribute-set form accepted by
-// builtins.flakeRefToString. Extra can hold additional typed flake-ref fields.
+func (a FetchTreeArgs) Validate() error {
+	if a.Type == "" {
+		return fmt.Errorf("fetchTree requires Type")
+	}
+	if a.URL != nil && a.Path != nil {
+		return fmt.Errorf("fetchTree cannot combine URL and Path")
+	}
+	if a.URL != nil && a.URL.Scheme == "" {
+		return fmt.Errorf("fetchTree URL must be absolute")
+	}
+	return nil
+}
+
+// FlakeReference is the URL-or-path union accepted by builtins.getFlake.
+type FlakeReference struct {
+	URL  *url.URL
+	Path *Path
+}
+
+func (r FlakeReference) Validate() error {
+	if (r.URL == nil) == (r.Path == nil) {
+		return fmt.Errorf("getFlake requires exactly one of URL or Path")
+	}
+	if r.URL != nil && r.URL.Scheme == "" {
+		return fmt.Errorf("getFlake URL must be absolute")
+	}
+	return nil
+}
+
+func (r FlakeReference) ToNixArgument() any {
+	if r.Path != nil {
+		return *r.Path
+	}
+	if r.URL != nil {
+		return r.URL.String()
+	}
+	return nil
+}
+
+// FlakeRefType is the backend kind accepted by a flake reference.
+type FlakeRefType string
+
+const (
+	FlakeRefGitHub   FlakeRefType = "github"
+	FlakeRefGitLab   FlakeRefType = "gitlab"
+	FlakeRefSourceHut FlakeRefType = "sourcehut"
+	FlakeRefGit      FlakeRefType = "git"
+	FlakeRefPath     FlakeRefType = "path"
+	FlakeRefIndirect FlakeRefType = "indirect"
+)
+
+// FlakeRefAttrs describes the structured argument to builtins.flakeRefToString.
 type FlakeRefAttrs struct {
-	Type    string
-	Owner   string
-	Repo    string
-	Ref     string
-	Rev     string
-	Dir     string
-	NarHash string
-	Host    string
-	Extra   AttrSet
+	Type       FlakeRefType
+	Owner      string
+	Repo       string
+	Ref        string
+	Rev        string
+	Dir        string
+	NarHash    string
+	Host       string
+	Shallow    *bool
+	Submodules *bool
+	AllRefs    *bool
+	Extra      AttrSet
 }
 
 func (a FlakeRefAttrs) ToNixAttrs() AttrSet {
 	attrs := cloneAttrs(a.Extra)
 	for key, val := range map[string]string{
-		"type": a.Type, "owner": a.Owner, "repo": a.Repo, "ref": a.Ref,
+		"type": string(a.Type), "owner": a.Owner, "repo": a.Repo, "ref": a.Ref,
 		"rev": a.Rev, "dir": a.Dir, "narHash": a.NarHash, "host": a.Host,
 	} {
 		if val != "" {
 			attrs[key] = val
 		}
 	}
+	if a.Shallow != nil {
+		attrs["shallow"] = *a.Shallow
+	}
+	if a.Submodules != nil {
+		attrs["submodules"] = *a.Submodules
+	}
+	if a.AllRefs != nil {
+		attrs["allRefs"] = *a.AllRefs
+	}
 	return attrs
 }
 
-// DerivationAttrs describes common derivation inputs. Extra carries additional
-// derivation attributes (including arbitrary environment variables) without
-// weakening the types of the common fields.
+// DerivationAttrs describes common derivation inputs. Extra carries attributes
+// such as environment variables and Nix derivation options.
 type DerivationAttrs struct {
 	Name    string
 	System  string
@@ -520,10 +720,23 @@ func (a DerivationAttrs) ToNixAttrs() AttrSet {
 	return attrs
 }
 
+func (a DerivationAttrs) Validate() error {
+	if a.Name == "" {
+		return fmt.Errorf("derivation requires Name")
+	}
+	if a.System == "" {
+		return fmt.Errorf("derivation requires System")
+	}
+	if a.Builder == nil {
+		return fmt.Errorf("derivation requires Builder")
+	}
+	return nil
+}
+
 func cloneAttrs(in AttrSet) AttrSet {
 	out := make(AttrSet, len(in))
-	for key, value := range in {
-		out[key] = value
+	for key, val := range in {
+		out[key] = val
 	}
 	return out
 }
