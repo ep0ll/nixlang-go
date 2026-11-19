@@ -132,13 +132,20 @@ func (s *Store) RealPath(path *Path) (string, error) {
 // The callback receives each output name and path. Paths are borrowed for the
 // duration of the callback only — call out.Clone() if you need to retain them.
 func (s *Store) Realise(path *Path, cb func(outname string, out *Path)) error {
-	code := s.c.Realise(s.ctx.Internal(), path.c, func(name string, sp *cstore.StorePath) {
-		var p *Path
-		if sp != nil {
-			p = &Path{c: sp}
+	if s == nil || s.c == nil || path == nil || path.c == nil {
+		return fmt.Errorf("nix: store and path are required")
+	}
+	var callback func(string, *cstore.StorePath)
+	if cb != nil {
+		callback = func(name string, sp *cstore.StorePath) {
+			var p *Path
+			if sp != nil {
+				p = &Path{c: sp}
+			}
+			cb(name, p)
 		}
-		cb(name, p)
-	})
+	}
+	code := s.c.Realise(s.ctx.Internal(), path.c, callback)
 	return s.ctx.Check(util.ErrorCode(code))
 }
 
