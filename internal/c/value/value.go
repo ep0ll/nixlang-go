@@ -49,7 +49,7 @@ type Value struct {
 type ListBuilder struct {
 	ptr           *C.ListBuilder
 	capacity      uint
-	inserted      []bool
+	inserted      map[uint]struct{}
 	insertedCount uint
 	consumed      bool
 }
@@ -405,7 +405,7 @@ func MakeListBuilder(ctx *cutil.Context, state *cexpr.EvalState, capacity uint) 
 	if p == nil {
 		return nil
 	}
-	b := &ListBuilder{ptr: p, capacity: capacity, inserted: make([]bool, int(capacity))}
+	b := &ListBuilder{ptr: p, capacity: capacity, inserted: make(map[uint]struct{})}
 	runtime.SetFinalizer(b, func(b *ListBuilder) { b.Free() })
 	return b
 }
@@ -416,9 +416,11 @@ func (b *ListBuilder) Insert(ctx *cutil.Context, index uint, v *Value) cutil.Err
 		return cutil.ErrUnknown
 	}
 	err := cutil.FromCErr(C.nix_list_builder_insert(ctx.Ptr(), b.ptr, C.uint(index), v.ptr))
-	if err == cutil.OK && !b.inserted[index] {
-		b.inserted[index] = true
-		b.insertedCount++
+	if err == cutil.OK {
+		if _, exists := b.inserted[index]; !exists {
+			b.inserted[index] = struct{}{}
+			b.insertedCount++
+		}
 	}
 	return err
 }
