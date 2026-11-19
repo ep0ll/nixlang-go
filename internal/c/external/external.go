@@ -152,7 +152,7 @@ func Create(ctx *cutil.Context, desc *Desc, data any) *Value {
 		desc.release()
 		return nil
 	}
-	C.nixgo_external_register_finalizer(unsafe.Pointer(ptr), C.uintptr_t(handle))
+	C.nixgo_external_register_finalizer(unsafe.Pointer(ptr), self)
 	value := &Value{ptr: ptr}
 	runtime.SetFinalizer(value, func(value *Value) { value.Free() })
 	return value
