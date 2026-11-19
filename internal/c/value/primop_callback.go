@@ -44,13 +44,21 @@ func cgoNixPrimOpCB(userdata unsafe.Pointer, context *C.nix_c_context, state *C.
 		raw := unsafe.Slice(args, callback.arity)
 		for i, arg := range raw {
 			values[i] = WrapBorrowedPtr(unsafe.Pointer(arg))
+			defer values[i].Decref()
 		}
 	}
+	resultValue := WrapBorrowedPtr(unsafe.Pointer(result))
+	defer resultValue.Decref()
+
+	stateView := cexpr.WrapState(unsafe.Pointer(state))
+	defer stateView.Free()
+	defer ctx.Free()
+
 	callback.fn(
 		callback.userData,
 		ctx,
-		cexpr.WrapState(unsafe.Pointer(state)),
+		stateView,
 		values,
-		WrapBorrowedPtr(unsafe.Pointer(result)),
+		resultValue,
 	)
 }
