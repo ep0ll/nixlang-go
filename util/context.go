@@ -151,6 +151,9 @@ func IsKeyError(err error) bool {
 
 // Init initializes libutil. Must be called before other Nix API use.
 func Init(ctx *Context) error {
+	if ctx == nil || ctx.c == nil {
+		return fmt.Errorf("nix: context is required")
+	}
 	return ctx.Check(ErrorCode(cutil.Init(ctx.Internal())))
 }
 
@@ -161,11 +164,17 @@ func Version() string {
 
 // SetSetting sets a Nix configuration setting.
 func SetSetting(ctx *Context, key, value string) error {
+	if ctx == nil || ctx.c == nil {
+		return fmt.Errorf("nix: context is required")
+	}
 	return ctx.Check(ErrorCode(cutil.SettingSet(ctx.Internal(), key, value)))
 }
 
 // GetSetting retrieves a Nix configuration setting.
 func GetSetting(ctx *Context, key string) (string, error) {
+	if ctx == nil || ctx.c == nil {
+		return "", fmt.Errorf("nix: context is required")
+	}
 	v, code := cutil.SettingGet(ctx.Internal(), key)
 	if err := ctx.Check(ErrorCode(code)); err != nil {
 		return "", err
@@ -175,6 +184,9 @@ func GetSetting(ctx *Context, key string) (string, error) {
 
 // SetVerbosity sets the global log verbosity.
 func SetVerbosity(ctx *Context, level Verbosity) error {
+	if ctx == nil || ctx.c == nil {
+		return fmt.Errorf("nix: context is required")
+	}
 	return ctx.Check(ErrorCode(cutil.SetVerbosity(ctx.Internal(), cutil.Verbosity(level))))
 }
 
