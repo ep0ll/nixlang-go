@@ -3,8 +3,7 @@
 //
 // Usage (inside nix develop):
 //
-//	go run -tags nix ./examples/realise-flake path:./. packages x86_64-linux default
-//	go run -tags nix ./examples/realise-flake github:NixOS/nixpkgs#hello packages x86_64-linux hello
+//	go run -tags nix ./examples/realise-flake path:/path/to/flake packages x86_64-linux default
 package main
 
 import (
