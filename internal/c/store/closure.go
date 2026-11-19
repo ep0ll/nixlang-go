@@ -5,6 +5,8 @@ package store
 #cgo pkg-config: nix-store-c nix-util-c
 #include <nix_api_store.h>
 #include <nix_api_util.h>
+#include <stdint.h>
+#include "bridge.h"
 
 typedef void (*nixgo_fs_closure_callback)(nix_c_context *, void *, const StorePath *);
 extern void cgoStoreFSClosureCB(nix_c_context *, void *, const StorePath *);
@@ -67,6 +69,6 @@ func (s *Store) GetFSClosure(
 	return cutil.FromCErr(C.nix_store_get_fs_closure(
 		ctx.Ptr(), s.ptr, path.ptr,
 		C.bool(flipDirection), C.bool(includeOutputs), C.bool(includeDerivers),
-		unsafe.Pointer(id), C.nixgo_fs_closure_callback(C.cgoStoreFSClosureCB),
+		unsafe.Pointer(C.nixgo_store_id_to_userdata(C.uintptr_t(id))), C.nixgo_fs_closure_callback(C.cgoStoreFSClosureCB),
 	))
 }
