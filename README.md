@@ -28,6 +28,40 @@ The library evaluates expressions and talks to stores and flakes through Nix lib
 
 Run nix develop, then ./scripts/check-capi.sh and go test -tags=nix ./...
 
+
+### Flake output realisation
+
+The flake package can evaluate output attributes, identify a derivation, and
+realise it through the store API without shelling out to `nix build`. Select
+outputs using a slice of attribute names (not a dotted string, so attribute names
+containing dots remain unambiguous):
+
+```go
+outputs, err := locked.RealiseOutput(ctx, flakeSettings, evalState, st,
+    []string{"packages", "x86_64-linux", "default"})
+if err != nil {
+    return err
+}
+defer func() {
+    for _, output := range outputs {
+        output.Close()
+    }
+}()
+
+for outputName, path := range outputs {
+    realPath, err := st.RealPath(path)
+    if err != nil {
+        return err
+    }
+    fmt.Printf("%s: %s\\n", outputName, realPath)
+}
+```
+
+This builds the selected derivation and returns owned store-path handles for
+its outputs. Call `Close` on each returned path. The complete runnable example
+is in `examples/realise-flake`; it takes a flake reference followed by the
+output attribute path.
+
 ## Packages
 
 | Package | Capabilities |
@@ -38,7 +72,7 @@ Run nix develop, then ./scripts/check-capi.sh and go test -tags=nix ./...
 | value | Typed values, lists, attrs, builders, retained values, custom primops and callback-scoped evaluator operations |
 | external | Go-backed Nix external values and callback descriptors |
 | fetchers | Fetcher settings |
-| flake | Flake settings, reference parsing, locking, output attrs |
+| flake | Flake settings, reference parsing, locking, output evaluation and realisation |
 | nixmain | Plugin initialization and log format |
 
 ## Resource lifetime
