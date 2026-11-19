@@ -21,9 +21,10 @@ import (
 
 // EvalState wraps the Nix evaluator state.
 type EvalState struct {
-	ptr    *C.EvalState
-	owned  bool
-	cloned bool
+	ptr      *C.EvalState
+	identity unsafe.Pointer
+	owned    bool
+	cloned   bool
 }
 
 // Builder wraps nix_eval_state_builder.
@@ -102,7 +103,7 @@ func (b *Builder) Build(ctx *cutil.Context) *EvalState {
 	if p == nil {
 		return nil
 	}
-	s := &EvalState{ptr: p, owned: true}
+	s := &EvalState{ptr: p, identity: C.nixgo_expr_state_identity(p), owned: true}
 	runtime.SetFinalizer(s, func(s *EvalState) { s.Free() })
 	return s
 }
@@ -146,7 +147,8 @@ func WrapState(p unsafe.Pointer) *EvalState {
 	if p == nil {
 		return nil
 	}
-	return &EvalState{ptr: (*C.EvalState)(p)}
+	raw := (*C.EvalState)(p)
+	return &EvalState{ptr: raw, identity: C.nixgo_expr_state_identity(raw)}
 }
 
 // CloneCallbackState creates a heap-allocated wrapper around the evaluator state
@@ -160,7 +162,7 @@ func CloneCallbackState(p unsafe.Pointer) *EvalState {
 	if cloned == nil {
 		return nil
 	}
-	s := &EvalState{ptr: cloned, cloned: true}
+	s := &EvalState{ptr: cloned, identity: C.nixgo_expr_state_identity(cloned), cloned: true}
 	runtime.SetFinalizer(s, func(s *EvalState) { s.Free() })
 	return s
 }
@@ -179,6 +181,11 @@ func (s *EvalState) Free() {
 		C.nix_state_free(ptr)
 	}
 	runtime.SetFinalizer(s, nil)
+}
+
+// Same reports whether two wrappers refer to the same underlying evaluator.
+func (s *EvalState) Same(other *EvalState) bool {
+	return s != nil && other != nil && s.identity != nil && s.identity == other.identity
 }
 
 // Ptr returns the C pointer.
