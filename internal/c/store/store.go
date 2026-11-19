@@ -220,7 +220,7 @@ func (s *Store) QueryPathFromHashPart(ctx *cutil.Context, hash string) *StorePat
 	if p == nil {
 		return nil
 	}
-	sp := &StorePath{ptr: p}
+	sp := &StorePath{ptr: p, owned: true}
 	runtime.SetFinalizer(sp, func(sp *StorePath) { sp.Free() })
 	return sp
 }
@@ -255,7 +255,7 @@ func (s *Store) AddDerivation(ctx *cutil.Context, d *Derivation) *StorePath {
 	if p == nil {
 		return nil
 	}
-	sp := &StorePath{ptr: p}
+	sp := &StorePath{ptr: p, owned: true}
 	runtime.SetFinalizer(sp, func(sp *StorePath) { sp.Free() })
 	return sp
 }
@@ -341,7 +341,7 @@ func CreateFromParts(ctx *cutil.Context, hash [20]byte, name string) *StorePath 
 	if p == nil {
 		return nil
 	}
-	sp := &StorePath{ptr: p}
+	sp := &StorePath{ptr: p, owned: true}
 	runtime.SetFinalizer(sp, func(sp *StorePath) { sp.Free() })
 	return sp
 }
