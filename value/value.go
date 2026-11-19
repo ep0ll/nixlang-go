@@ -68,6 +68,7 @@ func (v *Value) Close() {
 			v.ctx = nil
 			v.ownsContext = false
 		}
+	}
 }
 
 // Internal returns the low-level value.
@@ -89,7 +90,7 @@ func (v *Value) StateInternal() *cexpr.EvalState {
 
 // Type returns the current type (call Force first for thunks).
 func (v *Value) Type() Type {
-	if v == nil || v.c == nil || v.ctx == nil {
+	if v == nil || v.c == nil || v.c.Ptr() == nil || v.ctx == nil {
 		return TypeFailed
 	}
 	return Type(v.c.Type(v.ctx.Internal()))
@@ -181,6 +182,9 @@ func (v *Value) ListAt(i int) (*Value, error) {
 	if err := v.ensureType(TypeList); err != nil {
 		return nil, err
 	}
+	if i >= int(v.c.ListSize(v.ctx.Internal())) {
+		return nil, fmt.Errorf("nix: list index %d out of range", i)
+	}
 	cv := v.c.ListByIdx(v.ctx.Internal(), v.state, uint(i))
 	if cv == nil {
 		if err := v.ctx.Err(); err != nil {
@@ -198,6 +202,9 @@ func (v *Value) ListAtLazy(i int) (*Value, error) {
 	}
 	if err := v.ensureType(TypeList); err != nil {
 		return nil, err
+	}
+	if i >= int(v.c.ListSize(v.ctx.Internal())) {
+		return nil, fmt.Errorf("nix: list index %d out of range", i)
 	}
 	cv := v.c.ListByIdxLazy(v.ctx.Internal(), v.state, uint(i))
 	if cv == nil {
@@ -256,6 +263,9 @@ func (v *Value) AttrAt(index int) (string, *Value, error) {
 	if err := v.ensureType(TypeAttrs); err != nil {
 		return "", nil, err
 	}
+	if index >= int(v.c.AttrsSize(v.ctx.Internal())) {
+		return "", nil, fmt.Errorf("nix: attribute index %d out of range", index)
+	}
 	name, cv := v.c.AttrByIdx(v.ctx.Internal(), v.state, uint(index))
 	if cv == nil {
 		if err := v.ctx.Err(); err != nil {
@@ -274,6 +284,9 @@ func (v *Value) AttrAtLazy(index int) (string, *Value, error) {
 	}
 	if err := v.ensureType(TypeAttrs); err != nil {
 		return "", nil, err
+	}
+	if index >= int(v.c.AttrsSize(v.ctx.Internal())) {
+		return "", nil, fmt.Errorf("nix: attribute index %d out of range", index)
 	}
 	name, cv := v.c.AttrByIdxLazy(v.ctx.Internal(), v.state, uint(index))
 	if cv == nil {
@@ -406,7 +419,7 @@ func NewList(ctx *util.Context, state *cexpr.EvalState, elems []*Value) (*Value,
 		return nil, fmt.Errorf("nix: context and evaluator state are required")
 	}
 	for i, elem := range elems {
-		if elem == nil || elem.c == nil {
+		if elem == nil || elem.c == nil || elem.c.Ptr() == nil {
 			return nil, fmt.Errorf("nix: list element %d is nil or closed", i)
 		}
 		if elem.state != state {
