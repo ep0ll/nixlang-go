@@ -23,8 +23,8 @@ type Path string
 // Like expr.State, Builtins must not be used concurrently without external
 // synchronization.
 type Builtins struct {
-	state *expr.State
-	set   *value.Value
+	state  *expr.State
+	set    *value.Value
 	closed bool
 }
 
@@ -253,16 +253,22 @@ func (b *Builtins) fromGo(input any) (*value.Value, bool, error) {
 			owned := make([]*value.Value, 0, rv.Len())
 			for i := 0; i < rv.Len(); i++ {
 				if !rv.Index(i).CanInterface() {
-					for _, child := range owned { child.Close() }
+					for _, child := range owned {
+						child.Close()
+					}
 					return fail(fmt.Errorf("list element %d cannot be accessed", i))
 				}
 				child, closeChild, childErr := b.fromGo(rv.Index(i).Interface())
 				if childErr != nil {
-					for _, opened := range owned { opened.Close() }
+					for _, opened := range owned {
+						opened.Close()
+					}
 					return fail(fmt.Errorf("list element %d: %w", i, childErr))
 				}
 				elems[i] = child
-				if closeChild { owned = append(owned, child) }
+				if closeChild {
+					owned = append(owned, child)
+				}
 			}
 			err = out.SetList(elems)
 			for _, child := range owned { child.Close() }
