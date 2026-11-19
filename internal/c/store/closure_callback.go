@@ -17,6 +17,10 @@ import (
 //export cgoStoreFSClosureCB
 func cgoStoreFSClosureCB(context *C.nix_c_context, userdata unsafe.Pointer, borrowed *C.StorePath) {
 	ctx := cutil.WrapBorrowedContext(unsafe.Pointer(context))
+	if ctx == nil {
+		return
+	}
+	defer ctx.Free()
 	var path *StorePath
 	transferred := false
 	defer func() {
