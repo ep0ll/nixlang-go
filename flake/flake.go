@@ -315,19 +315,24 @@ func (lf *LockedFlake) RealiseOutput(
 	defer drvPath.Close()
 
 	realised := make(map[string]*store.Path)
+	var cloneErr error
 	err = st.Realise(drvPath, func(name string, path *store.Path) {
 		if path == nil {
 			return
 		}
 		clone := path.Clone()
 		if clone == nil {
-			panic("nix: failed to clone realised output store path")
+			cloneErr = fmt.Errorf("nix: failed to clone realised output %q", name)
+			return
 		}
 		if previous := realised[name]; previous != nil {
 			previous.Close()
 		}
 		realised[name] = clone
 	})
+	if err == nil && cloneErr != nil {
+		err = cloneErr
+	}
 	if err != nil {
 		for _, path := range realised {
 			path.Close()
