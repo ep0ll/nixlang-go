@@ -64,7 +64,7 @@ func cgoRealiseCB(userdata unsafe.Pointer, outname *C.char, out *C.StorePath) {
 	}
 	var sp *StorePath
 	if out != nil {
-		sp = &StorePath{ptr: out}
+		sp = WrapBorrowedStorePath(out)
 	}
 	cb(name, sp)
 }
