@@ -19,6 +19,7 @@ import (
 //export cgoNixPrimOpCB
 func cgoNixPrimOpCB(userdata unsafe.Pointer, context *C.nix_c_context, state *C.EvalState, args **C.nix_value, result *C.nix_value) {
 	ctx := cutil.WrapBorrowedContext(unsafe.Pointer(context))
+	defer ctx.Free()
 	defer func() {
 		if recovered := recover(); recovered != nil {
 			callbackFailure(ctx, recovered)
@@ -52,7 +53,6 @@ func cgoNixPrimOpCB(userdata unsafe.Pointer, context *C.nix_c_context, state *C.
 
 	stateView := cexpr.WrapState(unsafe.Pointer(state))
 	defer stateView.Free()
-	defer ctx.Free()
 
 	callback.fn(
 		callback.userData,
