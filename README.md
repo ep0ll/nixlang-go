@@ -116,6 +116,7 @@ isPath, err := b.IsPath(builtins.Path("./src"))
 // Wrap an evaluated Nix closure before passing it to higher-order builtins.
 fnValue, err := state.EvalString("x: x + 1", ".")
 fn, err := builtins.NewFunction(fnValue)
+defer fn.Close()
 mapped, err := b.Map(fn, []int{1, 2, 3})
 ```
 
