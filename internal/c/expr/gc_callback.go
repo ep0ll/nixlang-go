@@ -4,6 +4,7 @@ package expr
 #cgo pkg-config: nix-expr-c nix-util-c
 #include <nix_api_expr.h>
 #include <nix_api_util.h>
+#include "bridge.h"
 */
 import "C"
 import "unsafe"
@@ -14,7 +15,7 @@ func cgoExprGCFinalizer(obj unsafe.Pointer, userdata unsafe.Pointer) {
 	if userdata == nil {
 		return
 	}
-	id := uintptr(userdata)
+	id := uintptr(C.nixgo_expr_userdata_to_id(userdata))
 	gcFinalizerMu.Lock()
 	fn := gcFinalizers[id]
 	delete(gcFinalizers, id)
