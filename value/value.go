@@ -357,7 +357,7 @@ func (v *Value) ensureOpen() error {
 	if v == nil || v.c == nil || v.c.Ptr() == nil {
 		return fmt.Errorf("nix: value is closed")
 	}
-	if v.ctx == nil || v.state == nil {
+	if v.ctx == nil || v.state == nil || v.state.Ptr() == nil {
 		return fmt.Errorf("nix: value has no evaluation context")
 	}
 	return nil
@@ -423,7 +423,7 @@ func (v *Value) SetList(elems []*Value) error {
 		if elem == nil || elem.c == nil || elem.c.Ptr() == nil {
 			return fmt.Errorf("nix: list element %d is nil or closed", i)
 		}
-		if elem.state == nil || !elem.state.Same(v.state) {
+		if elem.state == nil || v.state == nil || !elem.state.Same(v.state) {
 			return fmt.Errorf("nix: list element %d belongs to a different evaluator state", i)
 		}
 	}
