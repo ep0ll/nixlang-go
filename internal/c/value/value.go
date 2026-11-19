@@ -47,9 +47,11 @@ type Value struct {
 
 // ListBuilder wraps ListBuilder.
 type ListBuilder struct {
-	ptr      *C.ListBuilder
-	capacity uint
-	consumed bool
+	ptr           *C.ListBuilder
+	capacity      uint
+	inserted      []bool
+	insertedCount uint
+	consumed      bool
 }
 
 // BindingsBuilder wraps BindingsBuilder.
@@ -384,7 +386,7 @@ func MakeListBuilder(ctx *cutil.Context, state *cexpr.EvalState, capacity uint) 
 	if p == nil {
 		return nil
 	}
-	b := &ListBuilder{ptr: p, capacity: capacity}
+	b := &ListBuilder{ptr: p, capacity: capacity, inserted: make([]bool, int(capacity))}
 	runtime.SetFinalizer(b, func(b *ListBuilder) { b.Free() })
 	return b
 }
@@ -394,7 +396,12 @@ func (b *ListBuilder) Insert(ctx *cutil.Context, index uint, v *Value) cutil.Err
 	if b == nil || b.ptr == nil || b.consumed || ctx == nil || v == nil || v.ptr == nil || index >= b.capacity || uint64(index) > uint64(^uint32(0)) {
 		return cutil.ErrUnknown
 	}
-	return cutil.FromCErr(C.nix_list_builder_insert(ctx.Ptr(), b.ptr, C.uint(index), v.ptr))
+	err := cutil.FromCErr(C.nix_list_builder_insert(ctx.Ptr(), b.ptr, C.uint(index), v.ptr))
+	if err == cutil.OK && !b.inserted[index] {
+		b.inserted[index] = true
+		b.insertedCount++
+	}
+	return err
 }
 
 // Free frees the list builder.
@@ -408,7 +415,7 @@ func (b *ListBuilder) Free() {
 
 // MakeList finalizes the builder into value.
 func (v *Value) MakeList(ctx *cutil.Context, b *ListBuilder) cutil.Err {
-	if v == nil || v.ptr == nil || b == nil || b.ptr == nil || b.consumed || ctx == nil {
+	if v == nil || v.ptr == nil || b == nil || b.ptr == nil || b.consumed || ctx == nil || b.insertedCount != b.capacity {
 		return cutil.ErrUnknown
 	}
 	err := cutil.FromCErr(C.nix_make_list(ctx.Ptr(), b.ptr, v.ptr))
