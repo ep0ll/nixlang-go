@@ -29,7 +29,8 @@ type EvalState struct {
 
 // Builder wraps nix_eval_state_builder.
 type Builder struct {
-	ptr *C.nix_eval_state_builder
+	ptr      *C.nix_eval_state_builder
+	consumed bool
 }
 
 // Init initializes libexpr.
@@ -50,7 +51,7 @@ func NewBuilder(ctx *cutil.Context, store *cstore.Store) *Builder {
 
 // Load reads ambient configuration into the builder.
 func (b *Builder) Load(ctx *cutil.Context) cutil.Err {
-	if b == nil || b.ptr == nil {
+	if b == nil || b.ptr == nil || b.consumed {
 		return cutil.ErrUnknown
 	}
 	return cutil.FromCErr(C.nix_eval_state_builder_load(ctx.Ptr(), b.ptr))
@@ -96,9 +97,10 @@ func (b *Builder) Ptr() *C.nix_eval_state_builder {
 
 // Build creates an EvalState.
 func (b *Builder) Build(ctx *cutil.Context) *EvalState {
-	if b == nil || b.ptr == nil {
+	if b == nil || b.ptr == nil || b.consumed {
 		return nil
 	}
+	b.consumed = true
 	p := C.nix_eval_state_build(ctx.Ptr(), b.ptr)
 	if p == nil {
 		return nil
