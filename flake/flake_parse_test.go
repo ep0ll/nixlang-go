@@ -56,7 +56,6 @@ func TestLockVirtual(t *testing.T) {
 	t.Skip("requires network and writable store; run manually with -run TestLockVirtual")
 }
 
-
 func TestRealiseOutputLocalFlake(t *testing.T) {
 	if os.Getenv("NIXGO_TEST_FLAKE_REALISE") != "1" {
 		t.Skip("set NIXGO_TEST_FLAKE_REALISE=1 to run a local-store flake realisation test")
