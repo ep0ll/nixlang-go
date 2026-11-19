@@ -189,11 +189,11 @@ func cgoExternalFinalizer(_ unsafe.Pointer, userdata unsafe.Pointer) {
 	if userdata == nil {
 		return
 	}
+	defer C.nixgo_external_handle_free(userdata)
 	handle := cgo.Handle(uintptr(C.nixgo_external_handle_from_ptr(userdata)))
 	instance, _ := handle.Value().(*externalInstance)
 	handle.Delete()
 	if instance != nil && instance.desc != nil {
 		instance.desc.release()
 	}
-	C.nixgo_external_handle_free(userdata)
 }
