@@ -78,7 +78,7 @@ func (a NameValue) ToNixAttrs() AttrSet {
 // SearchPathEntry describes an entry supplied to builtins.findFile.
 type SearchPathEntry struct {
 	Prefix string
-	Path   any // Path or string; Nix accepts both.
+	Path   PathLike
 }
 
 func (e SearchPathEntry) ToNixAttrs() AttrSet {
@@ -91,9 +91,9 @@ func (e SearchPathEntry) ToNixAttrs() AttrSet {
 
 // PathArgs describes the structured form of builtins.path.
 type PathArgs struct {
-	Path      any      // Path or string.
+	Path      PathLike
 	Name      string   // Optional store name.
-	Filter    Function // Optional Nix predicate (path: type: bool).
+	Filter    *Function // Optional Nix predicate (path: type: bool).
 	Recursive *bool    // Optional; nil uses Nix's default.
 	SHA256    string   // Optional expected SHA-256 hash.
 	Extra     AttrSet  // Reserved for forward-compatible extension fields.
@@ -106,7 +106,7 @@ func (a PathArgs) ToNixAttrs() AttrSet {
 		attrs["name"] = a.Name
 	}
 	if a.Filter != nil {
-		attrs["filter"] = a.Filter
+		attrs["filter"] = *a.Filter
 	}
 	if a.Recursive != nil {
 		attrs["recursive"] = *a.Recursive
@@ -155,8 +155,8 @@ func (c StringContext) ToNixAttrs() AttrSet {
 // ConvertHashArgs describes builtins.convertHash.
 type ConvertHashArgs struct {
 	Hash         string
-	HashAlgo     string // Optional when the hash encodes its algorithm.
-	ToHashFormat string
+	HashAlgo     HashAlgorithm // Optional when the hash encodes its algorithm.
+	ToHashFormat HashFormat
 	Extra        AttrSet
 }
 
@@ -164,8 +164,11 @@ func (a ConvertHashArgs) ToNixAttrs() AttrSet {
 	attrs := cloneAttrs(a.Extra)
 	attrs["hash"] = a.Hash
 	attrs["toHashFormat"] = a.ToHashFormat
-	if a.HashAlgo != "" {
-		attrs["hashAlgo"] = a.HashAlgo
+	if a.HashAlgo != HashAlgorithmInvalid {
+		attrs["hashAlgo"] = a.HashAlgo.nixString()
+	}
+	if a.ToHashFormat != HashFormatInvalid {
+		attrs["toHashFormat"] = a.ToHashFormat.nixString()
 	}
 	return attrs
 }
@@ -186,19 +189,19 @@ func (a GenericClosureArgs) ToNixAttrs() AttrSet {
 
 // FetchClosureArgs describes the structured form of builtins.fetchClosure.
 type FetchClosureArgs struct {
-	FromPath       any
+	FromPath       StorePath
 	FromStore      string
-	ToPath         any
+	ToPath         *StorePath
 	InputAddressed *bool
 }
 
 func (a FetchClosureArgs) ToNixAttrs() AttrSet {
-	attrs := AttrSet{"fromPath": a.FromPath}
+	attrs := AttrSet{"fromPath": string(a.FromPath)}
 	if a.FromStore != "" {
 		attrs["fromStore"] = a.FromStore
 	}
 	if a.ToPath != nil {
-		attrs["toPath"] = a.ToPath
+		attrs["toPath"] = string(*a.ToPath)
 	}
 	if a.InputAddressed != nil {
 		attrs["inputAddressed"] = *a.InputAddressed
@@ -208,7 +211,7 @@ func (a FetchClosureArgs) ToNixAttrs() AttrSet {
 
 // FetchURLArgs describes the attribute-set form of builtins.fetchurl.
 type FetchURLArgs struct {
-	URL   any
+	URL   string
 	Name  string
 	Extra AttrSet
 }
@@ -224,7 +227,7 @@ func (a FetchURLArgs) ToNixAttrs() AttrSet {
 
 // FetchTarballArgs describes the attribute-set form of builtins.fetchTarball.
 type FetchTarballArgs struct {
-	URL    any
+	URL    string
 	SHA256 string
 	Name   string
 	Extra  AttrSet
@@ -244,7 +247,7 @@ func (a FetchTarballArgs) ToNixAttrs() AttrSet {
 
 // FetchGitArgs describes the attribute-set form of builtins.fetchGit.
 type FetchGitArgs struct {
-	URL          any
+	URL          PathLike
 	Name         string
 	Rev          string
 	Ref          string
@@ -284,7 +287,7 @@ func (a FetchGitArgs) ToNixAttrs() AttrSet {
 
 // FetchMercurialArgs describes the attribute-set form of builtins.fetchMercurial.
 type FetchMercurialArgs struct {
-	URL   any // Path or string.
+	URL   PathLike
 	Name  string
 	Rev   string
 	Extra AttrSet
@@ -308,8 +311,8 @@ func (a FetchMercurialArgs) ToNixAttrs() AttrSet {
 // input attributes not represented by the common fields.
 type FetchTreeArgs struct {
 	Type         string
-	URL          any
-	Path         any
+	URL          PathLike
+	Path         PathLike
 	Rev          string
 	Ref          string
 	NarHash      string
@@ -392,7 +395,7 @@ func (a FlakeRefAttrs) ToNixAttrs() AttrSet {
 type DerivationAttrs struct {
 	Name    string
 	System  string
-	Builder any // Path or string.
+	Builder PathLike
 	Args    []string
 	Outputs []string
 	Env     AttrSet
