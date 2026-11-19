@@ -210,6 +210,44 @@ func (v *Value) AttrLazy(name string) (*Value, error) {
 	return FromInternal(v.ctx, v.state, cv), nil
 }
 
+// AttrAt returns the name and value at the attribute index. Nix does not
+// guarantee a stable attribute iteration order; sort names for deterministic output.
+func (v *Value) AttrAt(index int) (string, *Value, error) {
+	if index < 0 {
+		return "", nil, fmt.Errorf("nix: attribute index must not be negative")
+	}
+	if err := v.ensureType(TypeAttrs); err != nil {
+		return "", nil, err
+	}
+	name, cv := v.c.AttrByIdx(v.ctx.Internal(), v.state, uint(index))
+	if cv == nil {
+		if err := v.ctx.Err(); err != nil {
+			return "", nil, err
+		}
+		return "", nil, fmt.Errorf("nix: attribute index %d out of range", index)
+	}
+	return name, FromInternal(v.ctx, v.state, cv), nil
+}
+
+// AttrAtLazy returns the name and an unforced attribute value at the index.
+// The attribute set must already be evaluated. Attribute ordering is unspecified.
+func (v *Value) AttrAtLazy(index int) (string, *Value, error) {
+	if index < 0 {
+		return "", nil, fmt.Errorf("nix: attribute index must not be negative")
+	}
+	if err := v.ensureType(TypeAttrs); err != nil {
+		return "", nil, err
+	}
+	name, cv := v.c.AttrByIdxLazy(v.ctx.Internal(), v.state, uint(index))
+	if cv == nil {
+		if err := v.ctx.Err(); err != nil {
+			return "", nil, err
+		}
+		return "", nil, fmt.Errorf("nix: attribute index %d out of range", index)
+	}
+	return name, FromInternal(v.ctx, v.state, cv), nil
+}
+
 // HasAttr reports whether the attribute exists.
 func (v *Value) HasAttr(name string) (bool, error) {
 	if err := v.ensureType(TypeAttrs); err != nil {
