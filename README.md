@@ -113,8 +113,9 @@ answer, err := b.GetAttr("answer", map[string]any{"answer": 42})
 // Use builtins.Path when a Go string must be a Nix path, rather than a string.
 isPath, err := b.IsPath(builtins.Path("./src"))
 
-// Existing Nix closures can be passed as function arguments.
-fn, err := state.EvalString("x: x + 1", ".")
+// Wrap an evaluated Nix closure before passing it to higher-order builtins.
+fnValue, err := state.EvalString("x: x + 1", ".")
+fn, err := builtins.NewFunction(fnValue)
 mapped, err := b.Map(fn, []int{1, 2, 3})
 ```
 
@@ -122,8 +123,10 @@ Supported Go arguments include `nil`, booleans, signed and unsigned integers
 (fitting Nix's signed 64-bit integer range), floats, strings, `builtins.Path`,
 slices and arrays, string-keyed maps, and `*value.Value` handles from the same
 evaluator state. `[]byte` is treated as a Nix string. Function parameters are
-passed as existing Nix function values (for example, values returned by
-`expr.State.EvalString`). Results are returned as `*value.Value` so Nix types,
+passed as checked `builtins.Function` values created with
+`builtins.NewFunction` from an evaluator value. Other arbitrary evaluator
+values can be supplied as same-state `*value.Value` handles. Results are
+returned as `*value.Value` so Nix types,
 attribute sets, lists, and store-path string context are not silently flattened.
 
 Use `b.Get(name)` for constants such as `currentTime`, `currentSystem`,
@@ -156,8 +159,9 @@ converted, err := b.ConvertHash(builtins.ConvertHashArgs{
     ToHashFormat: "sri",
 })
 
-// Higher-order functions take Nix functions, not untyped callback pointers.
-fn, err := state.EvalString("x: x + 1", ".")
+// Higher-order functions take checked Nix function handles.
+fnValue, err := state.EvalString("x: x + 1", ".")
+fn, err := builtins.NewFunction(fnValue)
 mapped, err := b.Map(fn, []int{1, 2, 3})
 
 // Structured path arguments, including a Nix function predicate.
