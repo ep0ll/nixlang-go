@@ -39,9 +39,10 @@ const (
 // Value wraps a GC-managed nix_value.
 // Decref is idempotent; always call Close/Decref explicitly — finalizers are a backup only.
 type Value struct {
-	ptr    *C.nix_value
-	once   sync.Once
-	owned  bool
+	ptr   *C.nix_value
+	mu    sync.Mutex
+	refs  uint32
+	owned bool
 }
 
 // ListBuilder wraps ListBuilder.
@@ -65,7 +66,7 @@ func WrapPtr(p unsafe.Pointer) *Value {
 	if p == nil {
 		return nil
 	}
-	v := &Value{ptr: (*C.nix_value)(p), owned: true}
+	v := &Value{ptr: (*C.nix_value)(p), owned: true, refs: 1}
 	runtime.SetFinalizer(v, func(v *Value) { v.Decref() })
 	return v
 }
@@ -104,7 +105,19 @@ func (v *Value) CPtr() *C.nix_value {
 
 // Incref increments the GC refcount.
 func (v *Value) Incref(ctx *cutil.Context) cutil.Err {
-	return cutil.FromCErr(C.nix_value_incref(ctx.Ptr(), v.ptr))
+	if v == nil {
+		return cutil.ErrUnknown
+	}
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	if v.ptr == nil || !v.owned {
+		return cutil.ErrUnknown
+	}
+	err := C.nix_value_incref(ctx.Ptr(), v.ptr)
+	if err == C.NIX_OK {
+		v.refs++
+	}
+	return cutil.FromCErr(err)
 }
 
 // Decref decrements the GC refcount. Idempotent; safe with concurrent finalizer.
@@ -112,13 +125,34 @@ func (v *Value) Decref() {
 	if v == nil {
 		return
 	}
-	v.once.Do(func() {
-		if v.ptr != nil {
-			if v.owned { C.nix_value_decref(nil, v.ptr) }
-			v.ptr = nil
-		}
+	v.mu.Lock()
+	if v.ptr == nil {
+		v.mu.Unlock()
+		return
+	}
+	if !v.owned {
+		v.ptr = nil
+		v.mu.Unlock()
 		runtime.SetFinalizer(v, nil)
-	})
+		return
+	}
+	if v.refs == 0 {
+		v.ptr = nil
+		v.mu.Unlock()
+		runtime.SetFinalizer(v, nil)
+		return
+	}
+	ptr := v.ptr
+	v.refs--
+	if v.refs == 0 {
+		v.ptr = nil
+	}
+	v.mu.Unlock()
+
+	C.nix_value_decref(nil, ptr)
+	if v.refs == 0 {
+		runtime.SetFinalizer(v, nil)
+	}
 }
 
 // Type returns the value type.
