@@ -1,0 +1,114 @@
+// Package value provides typed access to Nix values and custom primops.
+package value
+
+import (
+	"errors"
+	"fmt"
+	"unsafe"
+
+	cexpr "github.com/ep0ll/nixlang-go/internal/c/expr"
+	cvalue "github.com/ep0ll/nixlang-go/internal/c/value"
+	cutil "github.com/ep0ll/nixlang-go/internal/c/util"
+	"github.com/ep0ll/nixlang-go/util"
+)
+
+// PrimOpFunc implements a Nix builtin. The state pointer and argument values
+// are borrowed for the duration of the callback. Call Retain on any argument
+// that must outlive the callback. Return an error to raise a Nix evaluation
+// error; a *util.NixError preserves its error code.
+type PrimOpFunc func(
+	userData any,
+	ctx *util.Context,
+	state unsafe.Pointer,
+	args []*Value,
+	result *Value,
+) error
+
+// PrimOp is a custom Nix builtin that can be registered for subsequently
+// created evaluator states.
+type PrimOp struct {
+	c *cvalue.PrimOp
+}
+
+// NewPrimOp allocates a custom builtin. Register it before creating evaluator
+// states that should see it. Close an unregistered primop to release it.
+func NewPrimOp(
+	ctx *util.Context,
+	fn PrimOpFunc,
+	arity int,
+	name string,
+	argNames []string,
+	doc string,
+	userData any,
+) (*PrimOp, error) {
+	if fn == nil {
+		return nil, fmt.Errorf("nix: primop callback is required")
+	}
+	callback := func(
+		data any,
+		callbackContext *cutil.Context,
+		state *cexpr.EvalState,
+		args []*cvalue.Value,
+		result *cvalue.Value,
+	) {
+		wrappedContext := util.WrapInternal(callbackContext)
+		wrappedArgs := make([]*Value, len(args))
+		for i, arg := range args {
+			wrappedArgs[i] = FromInternal(wrappedContext, state, arg)
+		}
+		wrappedResult := FromInternal(wrappedContext, state, result)
+		if err := fn(data, wrappedContext, unsafe.Pointer(state.Ptr()), wrappedArgs, wrappedResult); err != nil {
+			code := cutil.ErrUnknown
+			var nixErr *util.NixError
+			if errors.As(err, &nixErr) {
+				code = cutil.Err(nixErr.Code)
+			}
+			_ = callbackContext.SetErr(code, err.Error())
+		}
+	}
+	primop := cvalue.AllocPrimOp(
+		ctx.Internal(), callback, arity, name, argNames, doc, userData,
+	)
+	if primop == nil {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("nix: failed to allocate primop %q", name)
+	}
+	return &PrimOp{c: primop}, nil
+}
+
+// Register adds the builtin to the process-wide registry. It affects only
+// evaluator states created after registration.
+func (p *PrimOp) Register(ctx *util.Context) error {
+	if p == nil || p.c == nil {
+		return fmt.Errorf("nix: primop is closed")
+	}
+	return ctx.Check(util.ErrorCode(p.c.Register(ctx.Internal())))
+}
+
+// Close releases an unregistered primop. It is safe after Register.
+func (p *PrimOp) Close() {
+	if p != nil && p.c != nil {
+		p.c.Free()
+		p.c = nil
+	}
+}
+
+// RegisterPrimOp allocates and immediately registers a custom builtin.
+func RegisterPrimOp(
+	ctx *util.Context,
+	fn PrimOpFunc,
+	arity int,
+	name string,
+	argNames []string,
+	doc string,
+	userData any,
+) error {
+	primop, err := NewPrimOp(ctx, fn, arity, name, argNames, doc, userData)
+	if err != nil {
+		return err
+	}
+	defer primop.Close()
+	return primop.Register(ctx)
+}
