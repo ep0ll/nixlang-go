@@ -20,6 +20,7 @@ import (
 	"runtime/cgo"
 	"unsafe"
 
+	cexpr "github.com/ep0ll/nixlang-go/internal/c/expr"
 	cutil "github.com/ep0ll/nixlang-go/internal/c/util"
 )
 
