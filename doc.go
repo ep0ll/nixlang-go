@@ -26,4 +26,7 @@
 //
 // Call Close() on Context, Store, State, Value, and related owned objects.
 // Finalizers are a safety net only; do not rely on them for timely cleanup.
+// A Value is allocated in its evaluator's memory arena. Keep the owning
+// expr.State open until all Values and realised strings created from that state
+// have been closed, including Values retained from a primop callback.
 package nixgo
