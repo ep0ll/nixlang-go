@@ -78,18 +78,18 @@ var (
 func RegisterStringSlot(s *string) unsafe.Pointer {
 	strMu.Lock()
 	defer strMu.Unlock()
-	id := strNext
-	strNext++
-	strSlots[id] = s
-	return unsafe.Pointer(id)
+	token := new(byte)
+	strSlots[unsafe.Pointer(token)] = s
+	return unsafe.Pointer(token)
 }
 
 func TakeStringSlot(p unsafe.Pointer) *string {
 	strMu.Lock()
 	defer strMu.Unlock()
-	id := uintptr(p)
-	s := strSlots[id]
-	delete(strSlots, id)
+	s, ok := strSlots[p]
+	if ok {
+		delete(strSlots, p)
+	}
 	return s
 }
 
