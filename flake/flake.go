@@ -43,6 +43,9 @@ type LockedFlake struct {
 
 // NewSettings creates default flake settings.
 func NewSettings(ctx *util.Context) (*Settings, error) {
+	if ctx == nil || ctx.Internal() == nil {
+		return nil, fmt.Errorf("nix: context is required")
+	}
 	s := cflake.NewSettings(ctx.Internal())
 	if s == nil {
 		if err := ctx.Err(); err != nil {
@@ -71,7 +74,7 @@ func (s *Settings) Internal() *cflake.Settings {
 
 // AddToEvalStateBuilder registers flake-related builtins (e.g. getFlake).
 func (s *Settings) AddToEvalStateBuilder(ctx *util.Context, builder *expr.Builder) error {
-	if s == nil || s.c == nil || ctx == nil || builder == nil {
+	if s == nil || s.c == nil || ctx == nil || ctx.Internal() == nil || builder == nil || builder.Internal() == nil {
 		return fmt.Errorf("nix: flake settings, context and evaluator builder are required")
 	}
 	return ctx.Check(util.ErrorCode(s.c.AddToEvalStateBuilder(ctx.Internal(), builder.Internal())))
@@ -79,7 +82,7 @@ func (s *Settings) AddToEvalStateBuilder(ctx *util.Context, builder *expr.Builde
 
 // NewParseFlags creates flags for parsing flake references.
 func NewParseFlags(ctx *util.Context, settings *Settings) (*ParseFlags, error) {
-	if ctx == nil || settings == nil || settings.c == nil {
+	if ctx == nil || ctx.Internal() == nil || settings == nil || settings.c == nil {
 		return nil, fmt.Errorf("nix: context and flake settings are required")
 	}
 	f := cflake.NewParseFlags(ctx.Internal(), settings.c)
@@ -102,7 +105,7 @@ func (f *ParseFlags) Close() {
 
 // SetBaseDirectory sets the base directory for relative flake refs.
 func (f *ParseFlags) SetBaseDirectory(ctx *util.Context, dir string) error {
-	if f == nil || f.c == nil || ctx == nil {
+	if f == nil || f.c == nil || ctx == nil || ctx.Internal() == nil {
 		return fmt.Errorf("nix: parse flags and context are required")
 	}
 	return ctx.Check(util.ErrorCode(f.c.SetBaseDirectory(ctx.Internal(), dir)))
@@ -157,7 +160,7 @@ func (f *LockFlags) ModeWriteAsNeeded(ctx *util.Context) error {
 
 // AddInputOverride overrides a flake input.
 func (f *LockFlags) AddInputOverride(ctx *util.Context, inputPath string, ref *Reference) error {
-	if f == nil || f.c == nil || ref == nil || ref.c == nil || ctx == nil {
+	if f == nil || f.c == nil || ref == nil || ref.c == nil || ctx == nil || ctx.Internal() == nil {
 		return fmt.Errorf("nix: lock flags, context and input reference are required")
 	}
 	return ctx.Check(util.ErrorCode(f.c.AddInputOverride(ctx.Internal(), inputPath, ref.c)))
@@ -171,7 +174,7 @@ func ParseReference(
 	flags *ParseFlags,
 	str string,
 ) (*Reference, string, error) {
-	if ctx == nil || fetchSettings == nil || fetchSettings.Internal() == nil ||
+	if ctx == nil || ctx.Internal() == nil || fetchSettings == nil || fetchSettings.Internal() == nil ||
 		settings == nil || settings.c == nil || flags == nil || flags.c == nil {
 		return nil, "", fmt.Errorf("nix: fetcher settings, flake settings, parse flags and context are required")
 	}
@@ -236,7 +239,7 @@ func (lf *LockedFlake) Close() {
 // The caller must Close the returned value.
 // This evaluates the flake outputs; it does not build packages.
 func (lf *LockedFlake) OutputAttrs(ctx *util.Context, settings *Settings, state *expr.State) (*value.Value, error) {
-	if lf == nil || lf.c == nil || ctx == nil || settings == nil || settings.c == nil || state == nil || state.Internal() == nil {
+	if lf == nil || lf.c == nil || ctx == nil || ctx.Internal() == nil || settings == nil || settings.c == nil || state == nil || state.Internal() == nil {
 		return nil, fmt.Errorf("nix: locked flake, context, settings and evaluator state are required")
 	}
 	ptr := lf.c.GetOutputAttrs(ctx.Internal(), settings.c, state.Internal())
