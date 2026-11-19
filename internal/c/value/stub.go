@@ -37,6 +37,11 @@ type BindingsBuilder struct{}
 type PrimOp struct{}
 type RealisedString struct{}
 
+func WrapBorrowedPtr(p unsafe.Pointer) *Value {
+	if p == nil { return nil }
+	return &Value{}
+}
+
 func WrapPtr(p unsafe.Pointer) *Value {
 	if p == nil {
 		return nil
@@ -86,6 +91,9 @@ func (v *Value) AttrNameByIdx(ctx *cutil.Context, state *cexpr.EvalState, idx ui
 	return ""
 }
 func (v *Value) InitNull(ctx *cutil.Context) cutil.Err             { return cutil.OK }
+func (v *Value) GetExternal(ctx *cutil.Context) unsafe.Pointer { return nil }
+func (v *Value) InitExternal(ctx *cutil.Context, external unsafe.Pointer) cutil.Err { return cutil.OK }
+func (v *Value) Retain(ctx *cutil.Context) (*Value, cutil.Err) { return &Value{}, cutil.OK }
 func (v *Value) InitBool(ctx *cutil.Context, b bool) cutil.Err     { return cutil.OK }
 func (v *Value) InitInt(ctx *cutil.Context, i int64) cutil.Err     { return cutil.OK }
 func (v *Value) InitFloat(ctx *cutil.Context, f float64) cutil.Err { return cutil.OK }
