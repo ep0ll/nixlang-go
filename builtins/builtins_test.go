@@ -108,6 +108,7 @@ func TestExistingNixFunctionArgument(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewFunction: %v", err)
 	}
+	t.Cleanup(fn.Close)
 
 	mapped, err := b.Map(fn, []int{1, 2, 3})
 	if err != nil {
