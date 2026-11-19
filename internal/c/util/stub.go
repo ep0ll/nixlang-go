@@ -39,6 +39,8 @@ type Context struct {
 
 func NewContext() *Context { return &Context{} }
 
+func WrapBorrowedContext(unsafe.Pointer) *Context { return &Context{} }
+
 func (c *Context) Ptr() unsafe.Pointer { return nil }
 
 func (c *Context) Free() {
