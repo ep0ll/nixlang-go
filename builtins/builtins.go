@@ -232,6 +232,8 @@ func (b *Builtins) fromGo(input any) (*value.Value, bool, error) {
 		}
 
 		switch rv.Kind() {
+		case reflect.String:
+			err = out.SetString(rv.String())
 		case reflect.Bool:
 			err = out.SetBool(rv.Bool())
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
