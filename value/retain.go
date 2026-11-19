@@ -1,5 +1,11 @@
 package value
 
+import (
+	"fmt"
+
+	"github.com/ep0ll/nixlang-go/util"
+)
+
 // Retain creates an independently-owned reference to this Nix value.
 // Use it when keeping a value obtained in a primop callback beyond the
 // callback's lifetime.
