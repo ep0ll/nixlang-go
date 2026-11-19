@@ -15,6 +15,7 @@ extern void cgoRealiseCB(void *userdata, const char *outname, const StorePath *o
 */
 import "C"
 import (
+	"fmt"
 	"runtime"
 	"sync"
 	"unsafe"
@@ -196,10 +197,29 @@ func (s *Store) RealPath(ctx *cutil.Context, path *StorePath) (string, cutil.Err
 
 // Realise builds/realises a store path. callback is invoked per output.
 func (s *Store) Realise(ctx *cutil.Context, path *StorePath, cb func(outname string, out *StorePath)) cutil.Err {
+	if s == nil || s.ptr == nil || path == nil || path.ptr == nil {
+		if ctx != nil {
+			_ = ctx.SetErr(cutil.ErrUnknown, "nix: store and path are required")
+		}
+		return cutil.ErrUnknown
+	}
+
 	reg := registerRealiseCB(cb)
-	defer unregisterRealiseCB(reg)
-	return cutil.FromCErr(C.nix_store_realise(ctx.Ptr(), s.ptr, path.ptr, unsafe.Pointer(C.nixgo_store_id_to_userdata(C.uintptr_t(reg))),
-		C.nixgo_realise_cb(C.cgoRealiseCB)))
+	code := C.nix_store_realise(
+		ctx.Ptr(),
+		s.ptr,
+		path.ptr,
+		C.nixgo_store_id_to_userdata(C.uintptr_t(reg)),
+		C.nixgo_realise_cb(C.cgoRealiseCB),
+	)
+	callbackPanic := unregisterRealiseCB(reg)
+	if callbackPanic != nil {
+		if ctx != nil {
+			_ = ctx.SetErr(cutil.ErrUnknown, fmt.Sprintf("panic in store realise callback: %v", callbackPanic))
+		}
+		return cutil.ErrUnknown
+	}
+	return cutil.FromCErr(code)
 }
 
 // CopyClosure copies the closure of path from src to dst.
