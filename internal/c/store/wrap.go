@@ -24,7 +24,7 @@ func wrapOwnedStorePath(p *C.StorePath) *StorePath {
 	if p == nil {
 		return nil
 	}
-	path := &StorePath{ptr: p}
+	path := &StorePath{ptr: p, owned: true}
 	runtime.SetFinalizer(path, func(path *StorePath) { path.Free() })
 	return path
 }
