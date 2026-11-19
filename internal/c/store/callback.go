@@ -9,6 +9,7 @@ package store
 */
 import "C"
 import (
+	"fmt"
 	"sync"
 	"unsafe"
 
@@ -27,9 +28,14 @@ func cgoStoreStringCB(start *C.char, n C.uint, userData unsafe.Pointer) {
 	}
 }
 
+type realiseCallback struct {
+	fn         func(outname string, out *StorePath)
+	panicValue any
+}
+
 var (
 	realiseMu    sync.Mutex
-	realiseSlots         = make(map[uintptr]func(outname string, out *StorePath))
+	realiseSlots = make(map[uintptr]*realiseCallback)
 	realiseNext  uintptr = 1
 )
 
@@ -38,33 +44,56 @@ func registerRealiseCB(cb func(outname string, out *StorePath)) uintptr {
 	defer realiseMu.Unlock()
 	id := realiseNext
 	realiseNext++
-	realiseSlots[id] = cb
+	realiseSlots[id] = &realiseCallback{fn: cb}
 	return id
 }
 
-func unregisterRealiseCB(id uintptr) {
+func recordRealisePanic(id uintptr, recovered any) {
 	realiseMu.Lock()
 	defer realiseMu.Unlock()
+	if callback := realiseSlots[id]; callback != nil && callback.panicValue == nil {
+		callback.panicValue = recovered
+	}
+}
+
+func unregisterRealiseCB(id uintptr) any {
+	realiseMu.Lock()
+	defer realiseMu.Unlock()
+	callback := realiseSlots[id]
 	delete(realiseSlots, id)
+	if callback == nil {
+		return nil
+	}
+	return callback.panicValue
 }
 
 //export cgoRealiseCB
 func cgoRealiseCB(userdata unsafe.Pointer, outname *C.char, out *C.StorePath) {
-	defer func() { recover() }()
-	id := uintptr(C.nixgo_store_userdata_to_id(userdata))
-	realiseMu.Lock()
-	cb := realiseSlots[id]
-	realiseMu.Unlock()
-	if cb == nil {
+	if userdata == nil {
 		return
 	}
+	id := uintptr(C.nixgo_store_userdata_to_id(userdata))
+	realiseMu.Lock()
+	callback := realiseSlots[id]
+	realiseMu.Unlock()
+	if callback == nil || callback.fn == nil || callback.panicValue != nil {
+		return
+	}
+
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			recordRealisePanic(id, recovered)
+		}
+	}()
+
 	name := ""
 	if outname != nil {
 		name = C.GoString(outname)
 	}
-	var sp *StorePath
+	var path *StorePath
 	if out != nil {
-		sp = WrapBorrowedStorePath(out)
+		path = WrapBorrowedStorePath(out)
+		defer path.Free()
 	}
-	cb(name, sp)
+	callback.fn(name, path)
 }
