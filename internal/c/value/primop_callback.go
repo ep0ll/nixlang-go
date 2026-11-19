@@ -52,7 +52,6 @@ func cgoNixPrimOpCB(userdata unsafe.Pointer, context *C.nix_c_context, state *C.
 	defer resultValue.Decref()
 
 	stateView := cexpr.WrapState(unsafe.Pointer(state))
-	defer stateView.Free()
 
 	callback.fn(
 		callback.userData,
