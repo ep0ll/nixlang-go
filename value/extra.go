@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	cvalue "github.com/ep0ll/nixlang-go/internal/c/value"
+	cstore "github.com/ep0ll/nixlang-go/internal/c/store"
 	"github.com/ep0ll/nixlang-go/util"
 	nixstore "github.com/ep0ll/nixlang-go/store"
 )
