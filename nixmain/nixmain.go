@@ -5,6 +5,8 @@
 package nixmain
 
 import (
+	"fmt"
+
 	cnixmain "github.com/ep0ll/nixlang-go/internal/c/nixmain"
 	"github.com/ep0ll/nixlang-go/util"
 )
@@ -12,12 +14,18 @@ import (
 // InitPlugins loads plugins listed in the plugin-files setting.
 // Call once after init functions and settings are applied.
 func InitPlugins(ctx *util.Context) error {
+	if ctx == nil || ctx.Internal() == nil {
+		return fmt.Errorf("nix: context is required")
+	}
 	code := cnixmain.InitPlugins(ctx.Internal())
 	return ctx.Check(util.ErrorCode(code))
 }
 
 // SetLogFormat sets the Nix log format (e.g. "raw", "bar", "internal-json").
 func SetLogFormat(ctx *util.Context, format string) error {
+	if ctx == nil || ctx.Internal() == nil {
+		return fmt.Errorf("nix: context is required")
+	}
 	code := cnixmain.SetLogFormat(ctx.Internal(), format)
 	return ctx.Check(util.ErrorCode(code))
 }
