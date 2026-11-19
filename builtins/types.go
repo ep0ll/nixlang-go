@@ -162,7 +162,7 @@ func (a GenericClosureArgs) ToNixAttrs() AttrSet {
 
 // FetchClosureArgs describes the structured form of builtins.fetchClosure.
 type FetchClosureArgs struct {
-	FromPath       Path
+	FromPath       any
 	FromStore      string
 	ToPath         any
 	InputAddressed *bool
@@ -184,7 +184,7 @@ func (a FetchClosureArgs) ToNixAttrs() AttrSet {
 
 // FetchURLArgs describes the attribute-set form of builtins.fetchurl.
 type FetchURLArgs struct {
-	URL   string
+	URL   any
 	Name  string
 	Extra AttrSet
 }
@@ -200,7 +200,7 @@ func (a FetchURLArgs) ToNixAttrs() AttrSet {
 
 // FetchTarballArgs describes the attribute-set form of builtins.fetchTarball.
 type FetchTarballArgs struct {
-	URL    string
+	URL    any
 	SHA256 string
 	Name   string
 	Extra  AttrSet
@@ -220,7 +220,7 @@ func (a FetchTarballArgs) ToNixAttrs() AttrSet {
 
 // FetchGitArgs describes the attribute-set form of builtins.fetchGit.
 type FetchGitArgs struct {
-	URL          string
+	URL          any
 	Name         string
 	Rev          string
 	Ref          string
