@@ -39,7 +39,6 @@ var (
 	primOpCallbacks = make(map[uintptr]*primOpCallback)
 	primOpOwners    = make(map[*PrimOp]uintptr)
 	primOpNext      uintptr = 1
-	registeredPrimOpIDs []uintptr
 )
 
 func registerPrimOpCallback(callback *primOpCallback) uintptr {
@@ -135,7 +134,6 @@ func (p *PrimOp) Register(ctx *cutil.Context) cutil.Err {
 	id := primOpOwners[p]
 	delete(primOpOwners, p)
 	if id != 0 {
-		registeredPrimOpIDs = append(registeredPrimOpIDs, id)
 	}
 	primOpMu.Unlock()
 	runtime.SetFinalizer(p, nil)
@@ -145,7 +143,12 @@ func (p *PrimOp) Register(ctx *cutil.Context) cutil.Err {
 // Free releases an unregistered primop. Registered callbacks are retained for
 // the process lifetime because the global Nix registry may invoke them later.
 func (p *PrimOp) Free() {
-	if p == nil || p.ptr == nil {
+	if p == nil {
+		return
+	}
+	ptr := p.ptr
+	if ptr == nil {
+		runtime.SetFinalizer(p, nil)
 		return
 	}
 	p.ptr = nil
@@ -156,7 +159,7 @@ func (p *PrimOp) Free() {
 		delete(primOpCallbacks, id)
 	}
 	primOpMu.Unlock()
-	C.nix_gc_decref(nil, unsafe.Pointer(p.ptr))
+	C.nix_gc_decref(nil, unsafe.Pointer(ptr))
 	runtime.SetFinalizer(p, nil)
 }
 
