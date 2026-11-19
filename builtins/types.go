@@ -2,11 +2,42 @@
 // Nix builtin wrappers.
 package builtins
 
-import "github.com/ep0ll/nixlang-go/value"
+import (
+	"fmt"
 
-// Function is a function value owned by the same evaluator as Builtins.
-// Build it with expr.State.EvalString or retrieve it with Builtins.Get.
-type Function = *value.Value
+	"github.com/ep0ll/nixlang-go/value"
+)
+
+// Function is a checked Nix function value from the same evaluator as Builtins.
+// Wrap an evaluator value with NewFunction before passing it to higher-order
+// builtins. The underlying *value.Value remains owned by the caller and must
+// stay open for as long as the Function is used.
+type Function struct {
+	value *value.Value
+}
+
+// NewFunction validates and wraps a Nix function value.
+func NewFunction(v *value.Value) (Function, error) {
+	if v == nil || v.Internal() == nil || v.Internal().Ptr() == nil {
+		return Function{}, fmt.Errorf("nix: function value is nil or closed")
+	}
+	if err := v.Force(); err != nil {
+		return Function{}, err
+	}
+	typ, err := v.TypeChecked()
+	if err != nil {
+		return Function{}, err
+	}
+	if typ != value.TypeFunction {
+		return Function{}, fmt.Errorf("nix: expected function value, got %s", typ)
+	}
+	return Function{value: v}, nil
+}
+
+// Value returns the underlying evaluator value. The caller retains ownership.
+func (f Function) Value() *value.Value {
+	return f.value
+}
 
 // AttrSet is a Nix attribute set whose values are recursively converted from
 // Go values. Use it for Nix APIs whose attribute names are open-ended.
