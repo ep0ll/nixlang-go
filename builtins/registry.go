@@ -33,7 +33,7 @@ func Registry() []Spec {
 
 var registry = []Spec{
 	{Name: "add", Arity: 2, Args: []string{"e1", "e2"}, GoTypes: []string{"any", "any"}},
-	{Name: "addDrvOutputDependencies", Arity: 1, Args: []string{"s"}, GoTypes: []string{"string"}},
+	{Name: "addDrvOutputDependencies", Arity: 1, Args: []string{"s"}, GoTypes: []string{"any"}},
 	{Name: "addErrorContext", Arity: 2, Args: []string{"context", "value"}, GoTypes: []string{"string", "any"}},
 	{Name: "abort", Arity: 1, Args: []string{"s"}, GoTypes: []string{"string"}},
 	{Name: "throw", Arity: 1, Args: []string{"s"}, GoTypes: []string{"string"}},
@@ -136,7 +136,7 @@ var registry = []Spec{
 	{Name: "traceVerbose", Arity: 2, Args: []string{"e1", "e2"}, GoTypes: []string{"any", "any"}},
 	{Name: "tryEval", Arity: 1, Args: []string{"e"}, GoTypes: []string{"any"}},
 	{Name: "typeOf", Arity: 1, Args: []string{"e"}, GoTypes: []string{"any"}},
-	{Name: "unsafeDiscardOutputDependency", Arity: 1, Args: []string{"s"}, GoTypes: []string{"string"}},
+	{Name: "unsafeDiscardOutputDependency", Arity: 1, Args: []string{"s"}, GoTypes: []string{"any"}},
 	{Name: "unsafeDiscardStringContext", Arity: 1, Args: []string{"s"}, GoTypes: []string{"any"}},
 	{Name: "unsafeGetAttrPos", Arity: 2, Args: []string{"s", "set"}, GoTypes: []string{"string", "AttrSet"}},
 	{Name: "warn", Arity: 2, Args: []string{"e1", "e2"}, GoTypes: []string{"any", "any"}},
