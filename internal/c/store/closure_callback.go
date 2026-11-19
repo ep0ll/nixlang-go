@@ -4,6 +4,7 @@ package store
 #cgo pkg-config: nix-store-c nix-util-c
 #include <nix_api_store.h>
 #include <nix_api_util.h>
+#include "bridge.h"
 */
 import "C"
 import "unsafe"
@@ -14,7 +15,7 @@ func cgoStoreFSClosureCB(_ *C.nix_c_context, userdata unsafe.Pointer, borrowed *
 	if userdata == nil || borrowed == nil {
 		return
 	}
-	cb := takeFSClosureCallback(uintptr(userdata))
+	cb := takeFSClosureCallback(uintptr(C.nixgo_store_userdata_to_id(userdata)))
 	if cb == nil {
 		return
 	}
