@@ -3,563 +3,562 @@ package builtins
 
 import "github.com/ep0ll/nixlang-go/value"
 
-// Add calls builtins.add with 2 Go arguments.
-func (b *Builtins) Add(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("add", arg1, arg2)
+// Add calls builtins.add.
+func (b *Builtins) Add(left any, right any) (*value.Value, error) {
+	return b.Call("add", left, right)
 }
 
-// AddDrvOutputDependencies calls builtins.addDrvOutputDependencies with 1 Go argument.
-func (b *Builtins) AddDrvOutputDependencies(arg1 any) (*value.Value, error) {
-	return b.Call("addDrvOutputDependencies", arg1)
+// AddDrvOutputDependencies calls builtins.addDrvOutputDependencies.
+func (b *Builtins) AddDrvOutputDependencies(string string) (*value.Value, error) {
+	return b.Call("addDrvOutputDependencies", string)
 }
 
-// AddErrorContext calls builtins.addErrorContext with 2 Go arguments.
-func (b *Builtins) AddErrorContext(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("addErrorContext", arg1, arg2)
+// AddErrorContext calls builtins.addErrorContext.
+func (b *Builtins) AddErrorContext(context string, value any) (*value.Value, error) {
+	return b.Call("addErrorContext", context, value)
 }
 
-// Abort calls builtins.abort with 1 Go argument.
-func (b *Builtins) Abort(arg1 any) (*value.Value, error) {
-	return b.Call("abort", arg1)
+// Abort calls builtins.abort.
+func (b *Builtins) Abort(message string) (*value.Value, error) {
+	return b.Call("abort", message)
 }
 
-// Throw calls builtins.throw with 1 Go argument.
-func (b *Builtins) Throw(arg1 any) (*value.Value, error) {
-	return b.Call("throw", arg1)
+// Throw calls builtins.throw.
+func (b *Builtins) Throw(message string) (*value.Value, error) {
+	return b.Call("throw", message)
 }
 
-// All calls builtins.all with 2 Go arguments.
-func (b *Builtins) All(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("all", arg1, arg2)
+// All calls builtins.all.
+func (b *Builtins) All(predicate Function, list any) (*value.Value, error) {
+	return b.Call("all", predicate, list)
 }
 
-// Any calls builtins.any with 2 Go arguments.
-func (b *Builtins) Any(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("any", arg1, arg2)
+// Any calls builtins.any.
+func (b *Builtins) Any(predicate Function, list any) (*value.Value, error) {
+	return b.Call("any", predicate, list)
 }
 
-// AppendContext calls builtins.appendContext with 2 Go arguments.
-func (b *Builtins) AppendContext(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("appendContext", arg1, arg2)
+// AppendContext calls builtins.appendContext.
+func (b *Builtins) AppendContext(string string, context StringContext) (*value.Value, error) {
+	return b.Call("appendContext", string, context)
 }
 
-// AttrNames calls builtins.attrNames with 1 Go argument.
-func (b *Builtins) AttrNames(arg1 any) (*value.Value, error) {
-	return b.Call("attrNames", arg1)
+// AttrNames calls builtins.attrNames.
+func (b *Builtins) AttrNames(set AttrSet) (*value.Value, error) {
+	return b.Call("attrNames", set)
 }
 
-// AttrValues calls builtins.attrValues with 1 Go argument.
-func (b *Builtins) AttrValues(arg1 any) (*value.Value, error) {
-	return b.Call("attrValues", arg1)
+// AttrValues calls builtins.attrValues.
+func (b *Builtins) AttrValues(set AttrSet) (*value.Value, error) {
+	return b.Call("attrValues", set)
 }
 
-// BaseNameOf calls builtins.baseNameOf with 1 Go argument.
-func (b *Builtins) BaseNameOf(arg1 any) (*value.Value, error) {
-	return b.Call("baseNameOf", arg1)
+// BaseNameOf calls builtins.baseNameOf.
+func (b *Builtins) BaseNameOf(path any) (*value.Value, error) {
+	return b.Call("baseNameOf", path)
 }
 
-// BitAnd calls builtins.bitAnd with 2 Go arguments.
-func (b *Builtins) BitAnd(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("bitAnd", arg1, arg2)
+// BitAnd calls builtins.bitAnd.
+func (b *Builtins) BitAnd(left int64, right int64) (*value.Value, error) {
+	return b.Call("bitAnd", left, right)
 }
 
-// BitOr calls builtins.bitOr with 2 Go arguments.
-func (b *Builtins) BitOr(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("bitOr", arg1, arg2)
+// BitOr calls builtins.bitOr.
+func (b *Builtins) BitOr(left int64, right int64) (*value.Value, error) {
+	return b.Call("bitOr", left, right)
 }
 
-// BitXor calls builtins.bitXor with 2 Go arguments.
-func (b *Builtins) BitXor(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("bitXor", arg1, arg2)
+// BitXor calls builtins.bitXor.
+func (b *Builtins) BitXor(left int64, right int64) (*value.Value, error) {
+	return b.Call("bitXor", left, right)
 }
 
-// Break calls builtins.break with 1 Go argument.
-func (b *Builtins) Break(arg1 any) (*value.Value, error) {
-	return b.Call("break", arg1)
+// Break calls builtins.break.
+func (b *Builtins) Break(value any) (*value.Value, error) {
+	return b.Call("break", value)
 }
 
-// CatAttrs calls builtins.catAttrs with 2 Go arguments.
-func (b *Builtins) CatAttrs(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("catAttrs", arg1, arg2)
+// CatAttrs calls builtins.catAttrs.
+func (b *Builtins) CatAttrs(name string, list any) (*value.Value, error) {
+	return b.Call("catAttrs", name, list)
 }
 
-// Ceil calls builtins.ceil with 1 Go argument.
-func (b *Builtins) Ceil(arg1 any) (*value.Value, error) {
-	return b.Call("ceil", arg1)
+// Ceil calls builtins.ceil.
+func (b *Builtins) Ceil(number any) (*value.Value, error) {
+	return b.Call("ceil", number)
 }
 
-// CompareVersions calls builtins.compareVersions with 2 Go arguments.
-func (b *Builtins) CompareVersions(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("compareVersions", arg1, arg2)
+// CompareVersions calls builtins.compareVersions.
+func (b *Builtins) CompareVersions(left string, right string) (*value.Value, error) {
+	return b.Call("compareVersions", left, right)
 }
 
-// ConcatLists calls builtins.concatLists with 1 Go argument.
-func (b *Builtins) ConcatLists(arg1 any) (*value.Value, error) {
-	return b.Call("concatLists", arg1)
+// ConcatLists calls builtins.concatLists.
+func (b *Builtins) ConcatLists(lists any) (*value.Value, error) {
+	return b.Call("concatLists", lists)
 }
 
-// ConcatMap calls builtins.concatMap with 2 Go arguments.
-func (b *Builtins) ConcatMap(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("concatMap", arg1, arg2)
+// ConcatMap calls builtins.concatMap.
+func (b *Builtins) ConcatMap(function Function, list any) (*value.Value, error) {
+	return b.Call("concatMap", function, list)
 }
 
-// ConcatStringsSep calls builtins.concatStringsSep with 2 Go arguments.
-func (b *Builtins) ConcatStringsSep(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("concatStringsSep", arg1, arg2)
+// ConcatStringsSep calls builtins.concatStringsSep.
+func (b *Builtins) ConcatStringsSep(separator string, strings []string) (*value.Value, error) {
+	return b.Call("concatStringsSep", separator, strings)
 }
 
-// ConvertHash calls builtins.convertHash with 1 Go argument.
-func (b *Builtins) ConvertHash(arg1 any) (*value.Value, error) {
-	return b.Call("convertHash", arg1)
+// ConvertHash calls builtins.convertHash.
+func (b *Builtins) ConvertHash(args ConvertHashArgs) (*value.Value, error) {
+	return b.Call("convertHash", args)
 }
 
-// DeepSeq calls builtins.deepSeq with 2 Go arguments.
-func (b *Builtins) DeepSeq(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("deepSeq", arg1, arg2)
+// DeepSeq calls builtins.deepSeq.
+func (b *Builtins) DeepSeq(first any, second any) (*value.Value, error) {
+	return b.Call("deepSeq", first, second)
 }
 
-// DerivationStrict calls builtins.derivationStrict with 1 Go argument.
-func (b *Builtins) DerivationStrict(arg1 any) (*value.Value, error) {
-	return b.Call("derivationStrict", arg1)
+// DerivationStrict calls builtins.derivationStrict.
+func (b *Builtins) DerivationStrict(attrs DerivationAttrs) (*value.Value, error) {
+	return b.Call("derivationStrict", attrs)
 }
 
-// DirOf calls builtins.dirOf with 1 Go argument.
-func (b *Builtins) DirOf(arg1 any) (*value.Value, error) {
-	return b.Call("dirOf", arg1)
+// DirOf calls builtins.dirOf.
+func (b *Builtins) DirOf(path any) (*value.Value, error) {
+	return b.Call("dirOf", path)
 }
 
-// Div calls builtins.div with 2 Go arguments.
-func (b *Builtins) Div(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("div", arg1, arg2)
+// Div calls builtins.div.
+func (b *Builtins) Div(left any, right any) (*value.Value, error) {
+	return b.Call("div", left, right)
 }
 
-// Elem calls builtins.elem with 2 Go arguments.
-func (b *Builtins) Elem(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("elem", arg1, arg2)
+// Elem calls builtins.elem.
+func (b *Builtins) Elem(element any, list any) (*value.Value, error) {
+	return b.Call("elem", element, list)
 }
 
-// ElemAt calls builtins.elemAt with 2 Go arguments.
-func (b *Builtins) ElemAt(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("elemAt", arg1, arg2)
+// ElemAt calls builtins.elemAt.
+func (b *Builtins) ElemAt(list any, index int64) (*value.Value, error) {
+	return b.Call("elemAt", list, index)
 }
 
-// Exec calls builtins.exec with 1 Go argument.
-func (b *Builtins) Exec(arg1 any) (*value.Value, error) {
-	return b.Call("exec", arg1)
+// Exec calls builtins.exec.
+func (b *Builtins) Exec(command []any) (*value.Value, error) {
+	return b.Call("exec", command)
 }
 
-// FetchClosure calls builtins.fetchClosure with 1 Go argument.
-func (b *Builtins) FetchClosure(arg1 any) (*value.Value, error) {
-	return b.Call("fetchClosure", arg1)
+// FetchClosure calls builtins.fetchClosure.
+func (b *Builtins) FetchClosure(args FetchClosureArgs) (*value.Value, error) {
+	return b.Call("fetchClosure", args)
 }
 
-// FetchGit calls builtins.fetchGit with 1 Go argument.
-func (b *Builtins) FetchGit(arg1 any) (*value.Value, error) {
-	return b.Call("fetchGit", arg1)
+// FetchGit calls builtins.fetchGit.
+func (b *Builtins) FetchGit(args any) (*value.Value, error) {
+	return b.Call("fetchGit", args)
 }
 
-// FetchMercurial calls builtins.fetchMercurial with 1 Go argument.
-func (b *Builtins) FetchMercurial(arg1 any) (*value.Value, error) {
-	return b.Call("fetchMercurial", arg1)
+// FetchMercurial calls builtins.fetchMercurial.
+func (b *Builtins) FetchMercurial(args any) (*value.Value, error) {
+	return b.Call("fetchMercurial", args)
 }
 
-// FetchTarball calls builtins.fetchTarball with 1 Go argument.
-func (b *Builtins) FetchTarball(arg1 any) (*value.Value, error) {
-	return b.Call("fetchTarball", arg1)
+// FetchTarball calls builtins.fetchTarball.
+func (b *Builtins) FetchTarball(args any) (*value.Value, error) {
+	return b.Call("fetchTarball", args)
 }
 
-// FetchTree calls builtins.fetchTree with 1 Go argument.
-func (b *Builtins) FetchTree(arg1 any) (*value.Value, error) {
-	return b.Call("fetchTree", arg1)
+// FetchTree calls builtins.fetchTree.
+func (b *Builtins) FetchTree(input any) (*value.Value, error) {
+	return b.Call("fetchTree", input)
 }
 
-// Filter calls builtins.filter with 2 Go arguments.
-func (b *Builtins) Filter(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("filter", arg1, arg2)
+// Filter calls builtins.filter.
+func (b *Builtins) Filter(predicate Function, list any) (*value.Value, error) {
+	return b.Call("filter", predicate, list)
 }
 
-// FilterSource calls builtins.filterSource with 2 Go arguments.
-func (b *Builtins) FilterSource(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("filterSource", arg1, arg2)
+// FilterSource calls builtins.filterSource.
+func (b *Builtins) FilterSource(predicate Function, path any) (*value.Value, error) {
+	return b.Call("filterSource", predicate, path)
 }
 
-// FindFile calls builtins.findFile with 2 Go arguments.
-func (b *Builtins) FindFile(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("findFile", arg1, arg2)
+// FindFile calls builtins.findFile.
+func (b *Builtins) FindFile(searchPath []SearchPathEntry, lookupPath string) (*value.Value, error) {
+	return b.Call("findFile", searchPath, lookupPath)
 }
 
-// Floor calls builtins.floor with 1 Go argument.
-func (b *Builtins) Floor(arg1 any) (*value.Value, error) {
-	return b.Call("floor", arg1)
+// Floor calls builtins.floor.
+func (b *Builtins) Floor(number any) (*value.Value, error) {
+	return b.Call("floor", number)
 }
 
-// FoldlPrime calls builtins.foldl' with 3 Go arguments.
-func (b *Builtins) FoldlPrime(arg1 any, arg2 any, arg3 any) (*value.Value, error) {
-	return b.Call("foldl'", arg1, arg2, arg3)
+// FoldlPrime calls builtins.foldl'.
+func (b *Builtins) FoldlPrime(function Function, initial any, list any) (*value.Value, error) {
+	return b.Call("foldl'", function, initial, list)
 }
 
-// FromJSON calls builtins.fromJSON with 1 Go argument.
-func (b *Builtins) FromJSON(arg1 any) (*value.Value, error) {
-	return b.Call("fromJSON", arg1)
+// FromJSON calls builtins.fromJSON.
+func (b *Builtins) FromJSON(json string) (*value.Value, error) {
+	return b.Call("fromJSON", json)
 }
 
-// FromTOML calls builtins.fromTOML with 1 Go argument.
-func (b *Builtins) FromTOML(arg1 any) (*value.Value, error) {
-	return b.Call("fromTOML", arg1)
+// FromTOML calls builtins.fromTOML.
+func (b *Builtins) FromTOML(toml string) (*value.Value, error) {
+	return b.Call("fromTOML", toml)
 }
 
-// FunctionArgs calls builtins.functionArgs with 1 Go argument.
-func (b *Builtins) FunctionArgs(arg1 any) (*value.Value, error) {
-	return b.Call("functionArgs", arg1)
+// FunctionArgs calls builtins.functionArgs.
+func (b *Builtins) FunctionArgs(function Function) (*value.Value, error) {
+	return b.Call("functionArgs", function)
 }
 
-// GenList calls builtins.genList with 2 Go arguments.
-func (b *Builtins) GenList(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("genList", arg1, arg2)
+// GenList calls builtins.genList.
+func (b *Builtins) GenList(generator Function, length int64) (*value.Value, error) {
+	return b.Call("genList", generator, length)
 }
 
-// GenericClosure calls builtins.genericClosure with 1 Go argument.
-func (b *Builtins) GenericClosure(arg1 any) (*value.Value, error) {
-	return b.Call("genericClosure", arg1)
+// GenericClosure calls builtins.genericClosure.
+func (b *Builtins) GenericClosure(args GenericClosureArgs) (*value.Value, error) {
+	return b.Call("genericClosure", args)
 }
 
-// GetAttr calls builtins.getAttr with 2 Go arguments.
-func (b *Builtins) GetAttr(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("getAttr", arg1, arg2)
+// GetAttr calls builtins.getAttr.
+func (b *Builtins) GetAttr(name string, set AttrSet) (*value.Value, error) {
+	return b.Call("getAttr", name, set)
 }
 
-// GetContext calls builtins.getContext with 1 Go argument.
-func (b *Builtins) GetContext(arg1 any) (*value.Value, error) {
-	return b.Call("getContext", arg1)
+// GetContext calls builtins.getContext.
+func (b *Builtins) GetContext(input string) (*value.Value, error) {
+	return b.Call("getContext", input)
 }
 
-// GetEnv calls builtins.getEnv with 1 Go argument.
-func (b *Builtins) GetEnv(arg1 any) (*value.Value, error) {
-	return b.Call("getEnv", arg1)
+// GetEnv calls builtins.getEnv.
+func (b *Builtins) GetEnv(name string) (*value.Value, error) {
+	return b.Call("getEnv", name)
 }
 
-// GetFlake calls builtins.getFlake with 1 Go argument.
-func (b *Builtins) GetFlake(arg1 any) (*value.Value, error) {
-	return b.Call("getFlake", arg1)
+// GetFlake calls builtins.getFlake.
+func (b *Builtins) GetFlake(ref any) (*value.Value, error) {
+	return b.Call("getFlake", ref)
 }
 
-// GroupBy calls builtins.groupBy with 2 Go arguments.
-func (b *Builtins) GroupBy(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("groupBy", arg1, arg2)
+// GroupBy calls builtins.groupBy.
+func (b *Builtins) GroupBy(function Function, list any) (*value.Value, error) {
+	return b.Call("groupBy", function, list)
 }
 
-// HashFile calls builtins.hashFile with 2 Go arguments.
-func (b *Builtins) HashFile(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("hashFile", arg1, arg2)
+// HashFile calls builtins.hashFile.
+func (b *Builtins) HashFile(algorithm string, path any) (*value.Value, error) {
+	return b.Call("hashFile", algorithm, path)
 }
 
-// HashString calls builtins.hashString with 2 Go arguments.
-func (b *Builtins) HashString(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("hashString", arg1, arg2)
+// HashString calls builtins.hashString.
+func (b *Builtins) HashString(algorithm string, input string) (*value.Value, error) {
+	return b.Call("hashString", algorithm, input)
 }
 
-// HasAttr calls builtins.hasAttr with 2 Go arguments.
-func (b *Builtins) HasAttr(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("hasAttr", arg1, arg2)
+// HasAttr calls builtins.hasAttr.
+func (b *Builtins) HasAttr(name string, set AttrSet) (*value.Value, error) {
+	return b.Call("hasAttr", name, set)
 }
 
-// HasContext calls builtins.hasContext with 1 Go argument.
-func (b *Builtins) HasContext(arg1 any) (*value.Value, error) {
-	return b.Call("hasContext", arg1)
+// HasContext calls builtins.hasContext.
+func (b *Builtins) HasContext(input string) (*value.Value, error) {
+	return b.Call("hasContext", input)
 }
 
-// Head calls builtins.head with 1 Go argument.
-func (b *Builtins) Head(arg1 any) (*value.Value, error) {
-	return b.Call("head", arg1)
+// Head calls builtins.head.
+func (b *Builtins) Head(list any) (*value.Value, error) {
+	return b.Call("head", list)
 }
 
-// Import calls builtins.import with 1 Go argument.
-func (b *Builtins) Import(arg1 any) (*value.Value, error) {
-	return b.Call("import", arg1)
+// Import calls builtins.import.
+func (b *Builtins) Import(path any) (*value.Value, error) {
+	return b.Call("import", path)
 }
 
-// ImportNative calls builtins.importNative with 2 Go arguments.
-func (b *Builtins) ImportNative(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("importNative", arg1, arg2)
+// ImportNative calls builtins.importNative.
+func (b *Builtins) ImportNative(path any, symbol string) (*value.Value, error) {
+	return b.Call("importNative", path, symbol)
 }
 
-// IntersectAttrs calls builtins.intersectAttrs with 2 Go arguments.
-func (b *Builtins) IntersectAttrs(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("intersectAttrs", arg1, arg2)
+// IntersectAttrs calls builtins.intersectAttrs.
+func (b *Builtins) IntersectAttrs(first AttrSet, second AttrSet) (*value.Value, error) {
+	return b.Call("intersectAttrs", first, second)
 }
 
-// IsAttrs calls builtins.isAttrs with 1 Go argument.
-func (b *Builtins) IsAttrs(arg1 any) (*value.Value, error) {
-	return b.Call("isAttrs", arg1)
+// IsAttrs calls builtins.isAttrs.
+func (b *Builtins) IsAttrs(value any) (*value.Value, error) {
+	return b.Call("isAttrs", value)
 }
 
-// IsBool calls builtins.isBool with 1 Go argument.
-func (b *Builtins) IsBool(arg1 any) (*value.Value, error) {
-	return b.Call("isBool", arg1)
+// IsBool calls builtins.isBool.
+func (b *Builtins) IsBool(value any) (*value.Value, error) {
+	return b.Call("isBool", value)
 }
 
-// IsFloat calls builtins.isFloat with 1 Go argument.
-func (b *Builtins) IsFloat(arg1 any) (*value.Value, error) {
-	return b.Call("isFloat", arg1)
+// IsFloat calls builtins.isFloat.
+func (b *Builtins) IsFloat(value any) (*value.Value, error) {
+	return b.Call("isFloat", value)
 }
 
-// IsFunction calls builtins.isFunction with 1 Go argument.
-func (b *Builtins) IsFunction(arg1 any) (*value.Value, error) {
-	return b.Call("isFunction", arg1)
+// IsFunction calls builtins.isFunction.
+func (b *Builtins) IsFunction(value any) (*value.Value, error) {
+	return b.Call("isFunction", value)
 }
 
-// IsInt calls builtins.isInt with 1 Go argument.
-func (b *Builtins) IsInt(arg1 any) (*value.Value, error) {
-	return b.Call("isInt", arg1)
+// IsInt calls builtins.isInt.
+func (b *Builtins) IsInt(value any) (*value.Value, error) {
+	return b.Call("isInt", value)
 }
 
-// IsList calls builtins.isList with 1 Go argument.
-func (b *Builtins) IsList(arg1 any) (*value.Value, error) {
-	return b.Call("isList", arg1)
+// IsList calls builtins.isList.
+func (b *Builtins) IsList(value any) (*value.Value, error) {
+	return b.Call("isList", value)
 }
 
-// IsNull calls builtins.isNull with 1 Go argument.
-func (b *Builtins) IsNull(arg1 any) (*value.Value, error) {
-	return b.Call("isNull", arg1)
+// IsNull calls builtins.isNull.
+func (b *Builtins) IsNull(value any) (*value.Value, error) {
+	return b.Call("isNull", value)
 }
 
-// IsPath calls builtins.isPath with 1 Go argument.
-func (b *Builtins) IsPath(arg1 any) (*value.Value, error) {
-	return b.Call("isPath", arg1)
+// IsPath calls builtins.isPath.
+func (b *Builtins) IsPath(value any) (*value.Value, error) {
+	return b.Call("isPath", value)
 }
 
-// IsString calls builtins.isString with 1 Go argument.
-func (b *Builtins) IsString(arg1 any) (*value.Value, error) {
-	return b.Call("isString", arg1)
+// IsString calls builtins.isString.
+func (b *Builtins) IsString(value any) (*value.Value, error) {
+	return b.Call("isString", value)
 }
 
-// Length calls builtins.length with 1 Go argument.
-func (b *Builtins) Length(arg1 any) (*value.Value, error) {
-	return b.Call("length", arg1)
+// Length calls builtins.length.
+func (b *Builtins) Length(list any) (*value.Value, error) {
+	return b.Call("length", list)
 }
 
-// LessThan calls builtins.lessThan with 2 Go arguments.
-func (b *Builtins) LessThan(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("lessThan", arg1, arg2)
+// LessThan calls builtins.lessThan.
+func (b *Builtins) LessThan(left any, right any) (*value.Value, error) {
+	return b.Call("lessThan", left, right)
 }
 
-// ListToAttrs calls builtins.listToAttrs with 1 Go argument.
-func (b *Builtins) ListToAttrs(arg1 any) (*value.Value, error) {
-	return b.Call("listToAttrs", arg1)
+// ListToAttrs calls builtins.listToAttrs.
+func (b *Builtins) ListToAttrs(list any) (*value.Value, error) {
+	return b.Call("listToAttrs", list)
 }
 
-// Map calls builtins.map with 2 Go arguments.
-func (b *Builtins) Map(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("map", arg1, arg2)
+// Map calls builtins.map.
+func (b *Builtins) Map(function Function, list any) (*value.Value, error) {
+	return b.Call("map", function, list)
 }
 
-// MapAttrs calls builtins.mapAttrs with 2 Go arguments.
-func (b *Builtins) MapAttrs(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("mapAttrs", arg1, arg2)
+// MapAttrs calls builtins.mapAttrs.
+func (b *Builtins) MapAttrs(function Function, attrs AttrSet) (*value.Value, error) {
+	return b.Call("mapAttrs", function, attrs)
 }
 
-// Match calls builtins.match with 2 Go arguments.
-func (b *Builtins) Match(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("match", arg1, arg2)
+// Match calls builtins.match.
+func (b *Builtins) Match(regex string, input string) (*value.Value, error) {
+	return b.Call("match", regex, input)
 }
 
-// Mul calls builtins.mul with 2 Go arguments.
-func (b *Builtins) Mul(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("mul", arg1, arg2)
+// Mul calls builtins.mul.
+func (b *Builtins) Mul(left any, right any) (*value.Value, error) {
+	return b.Call("mul", left, right)
 }
 
-// OutputOf calls builtins.outputOf with 2 Go arguments.
-func (b *Builtins) OutputOf(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("outputOf", arg1, arg2)
+// OutputOf calls builtins.outputOf.
+func (b *Builtins) OutputOf(derivationReference string, outputName string) (*value.Value, error) {
+	return b.Call("outputOf", derivationReference, outputName)
 }
 
-// ParseDrvName calls builtins.parseDrvName with 1 Go argument.
-func (b *Builtins) ParseDrvName(arg1 any) (*value.Value, error) {
-	return b.Call("parseDrvName", arg1)
+// ParseDrvName calls builtins.parseDrvName.
+func (b *Builtins) ParseDrvName(name string) (*value.Value, error) {
+	return b.Call("parseDrvName", name)
 }
 
-// ParseFlakeRef calls builtins.parseFlakeRef with 1 Go argument.
-func (b *Builtins) ParseFlakeRef(arg1 any) (*value.Value, error) {
-	return b.Call("parseFlakeRef", arg1)
+// ParseFlakeRef calls builtins.parseFlakeRef.
+func (b *Builtins) ParseFlakeRef(ref string) (*value.Value, error) {
+	return b.Call("parseFlakeRef", ref)
 }
 
-// Partition calls builtins.partition with 2 Go arguments.
-func (b *Builtins) Partition(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("partition", arg1, arg2)
+// Partition calls builtins.partition.
+func (b *Builtins) Partition(predicate Function, list any) (*value.Value, error) {
+	return b.Call("partition", predicate, list)
 }
 
-// Path calls builtins.path with 1 Go argument.
-func (b *Builtins) Path(arg1 any) (*value.Value, error) {
-	return b.Call("path", arg1)
+// Path calls builtins.path.
+func (b *Builtins) Path(args PathArgs) (*value.Value, error) {
+	return b.Call("path", args)
 }
 
-// PathExists calls builtins.pathExists with 1 Go argument.
-func (b *Builtins) PathExists(arg1 any) (*value.Value, error) {
-	return b.Call("pathExists", arg1)
+// PathExists calls builtins.pathExists.
+func (b *Builtins) PathExists(path any) (*value.Value, error) {
+	return b.Call("pathExists", path)
 }
 
-// Placeholder calls builtins.placeholder with 1 Go argument.
-func (b *Builtins) Placeholder(arg1 any) (*value.Value, error) {
-	return b.Call("placeholder", arg1)
+// Placeholder calls builtins.placeholder.
+func (b *Builtins) Placeholder(output string) (*value.Value, error) {
+	return b.Call("placeholder", output)
 }
 
-// ReadDir calls builtins.readDir with 1 Go argument.
-func (b *Builtins) ReadDir(arg1 any) (*value.Value, error) {
-	return b.Call("readDir", arg1)
+// ReadDir calls builtins.readDir.
+func (b *Builtins) ReadDir(path any) (*value.Value, error) {
+	return b.Call("readDir", path)
 }
 
-// ReadFile calls builtins.readFile with 1 Go argument.
-func (b *Builtins) ReadFile(arg1 any) (*value.Value, error) {
-	return b.Call("readFile", arg1)
+// ReadFile calls builtins.readFile.
+func (b *Builtins) ReadFile(path any) (*value.Value, error) {
+	return b.Call("readFile", path)
 }
 
-// ReadFileType calls builtins.readFileType with 1 Go argument.
-func (b *Builtins) ReadFileType(arg1 any) (*value.Value, error) {
-	return b.Call("readFileType", arg1)
+// ReadFileType calls builtins.readFileType.
+func (b *Builtins) ReadFileType(path any) (*value.Value, error) {
+	return b.Call("readFileType", path)
 }
 
-// RemoveAttrs calls builtins.removeAttrs with 2 Go arguments.
-func (b *Builtins) RemoveAttrs(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("removeAttrs", arg1, arg2)
+// RemoveAttrs calls builtins.removeAttrs.
+func (b *Builtins) RemoveAttrs(set AttrSet, names []string) (*value.Value, error) {
+	return b.Call("removeAttrs", set, names)
 }
 
-// ReplaceStrings calls builtins.replaceStrings with 3 Go arguments.
-func (b *Builtins) ReplaceStrings(arg1 any, arg2 any, arg3 any) (*value.Value, error) {
-	return b.Call("replaceStrings", arg1, arg2, arg3)
+// ReplaceStrings calls builtins.replaceStrings.
+func (b *Builtins) ReplaceStrings(from []string, to []string, input string) (*value.Value, error) {
+	return b.Call("replaceStrings", from, to, input)
 }
 
-// ScopedImport calls builtins.scopedImport with 2 Go arguments.
-func (b *Builtins) ScopedImport(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("scopedImport", arg1, arg2)
+// ScopedImport calls builtins.scopedImport.
+func (b *Builtins) ScopedImport(scope AttrSet, path any) (*value.Value, error) {
+	return b.Call("scopedImport", scope, path)
 }
 
-// Seq calls builtins.seq with 2 Go arguments.
-func (b *Builtins) Seq(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("seq", arg1, arg2)
+// Seq calls builtins.seq.
+func (b *Builtins) Seq(first any, second any) (*value.Value, error) {
+	return b.Call("seq", first, second)
 }
 
-// Sort calls builtins.sort with 2 Go arguments.
-func (b *Builtins) Sort(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("sort", arg1, arg2)
+// Sort calls builtins.sort.
+func (b *Builtins) Sort(comparator Function, list any) (*value.Value, error) {
+	return b.Call("sort", comparator, list)
 }
 
-// Split calls builtins.split with 2 Go arguments.
-func (b *Builtins) Split(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("split", arg1, arg2)
+// Split calls builtins.split.
+func (b *Builtins) Split(regex string, input string) (*value.Value, error) {
+	return b.Call("split", regex, input)
 }
 
-// SplitVersion calls builtins.splitVersion with 1 Go argument.
-func (b *Builtins) SplitVersion(arg1 any) (*value.Value, error) {
-	return b.Call("splitVersion", arg1)
+// SplitVersion calls builtins.splitVersion.
+func (b *Builtins) SplitVersion(version string) (*value.Value, error) {
+	return b.Call("splitVersion", version)
 }
 
-// StorePath calls builtins.storePath with 1 Go argument.
-func (b *Builtins) StorePath(arg1 any) (*value.Value, error) {
-	return b.Call("storePath", arg1)
+// StorePath calls builtins.storePath.
+func (b *Builtins) StorePath(path any) (*value.Value, error) {
+	return b.Call("storePath", path)
 }
 
-// StringLength calls builtins.stringLength with 1 Go argument.
-func (b *Builtins) StringLength(arg1 any) (*value.Value, error) {
-	return b.Call("stringLength", arg1)
+// StringLength calls builtins.stringLength.
+func (b *Builtins) StringLength(input string) (*value.Value, error) {
+	return b.Call("stringLength", input)
 }
 
-// Sub calls builtins.sub with 2 Go arguments.
-func (b *Builtins) Sub(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("sub", arg1, arg2)
+// Sub calls builtins.sub.
+func (b *Builtins) Sub(left any, right any) (*value.Value, error) {
+	return b.Call("sub", left, right)
 }
 
-// Substring calls builtins.substring with 3 Go arguments.
-func (b *Builtins) Substring(arg1 any, arg2 any, arg3 any) (*value.Value, error) {
-	return b.Call("substring", arg1, arg2, arg3)
+// Substring calls builtins.substring.
+func (b *Builtins) Substring(start int64, length int64, input string) (*value.Value, error) {
+	return b.Call("substring", start, length, input)
 }
 
-// Tail calls builtins.tail with 1 Go argument.
-func (b *Builtins) Tail(arg1 any) (*value.Value, error) {
-	return b.Call("tail", arg1)
+// Tail calls builtins.tail.
+func (b *Builtins) Tail(list any) (*value.Value, error) {
+	return b.Call("tail", list)
 }
 
-// ToFile calls builtins.toFile with 2 Go arguments.
-func (b *Builtins) ToFile(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("toFile", arg1, arg2)
+// ToFile calls builtins.toFile.
+func (b *Builtins) ToFile(name string, contents string) (*value.Value, error) {
+	return b.Call("toFile", name, contents)
 }
 
-// ToJSON calls builtins.toJSON with 1 Go argument.
-func (b *Builtins) ToJSON(arg1 any) (*value.Value, error) {
-	return b.Call("toJSON", arg1)
+// ToJSON calls builtins.toJSON.
+func (b *Builtins) ToJSON(expr any) (*value.Value, error) {
+	return b.Call("toJSON", expr)
 }
 
-// ToPath calls builtins.toPath with 1 Go argument.
-func (b *Builtins) ToPath(arg1 any) (*value.Value, error) {
-	return b.Call("toPath", arg1)
+// ToPath calls builtins.toPath.
+func (b *Builtins) ToPath(path any) (*value.Value, error) {
+	return b.Call("toPath", path)
 }
 
-// ToString calls builtins.toString with 1 Go argument.
-func (b *Builtins) ToString(arg1 any) (*value.Value, error) {
-	return b.Call("toString", arg1)
+// ToString calls builtins.toString.
+func (b *Builtins) ToString(value any) (*value.Value, error) {
+	return b.Call("toString", value)
 }
 
-// ToXML calls builtins.toXML with 1 Go argument.
-func (b *Builtins) ToXML(arg1 any) (*value.Value, error) {
-	return b.Call("toXML", arg1)
+// ToXML calls builtins.toXML.
+func (b *Builtins) ToXML(expr any) (*value.Value, error) {
+	return b.Call("toXML", expr)
 }
 
-// Trace calls builtins.trace with 2 Go arguments.
-func (b *Builtins) Trace(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("trace", arg1, arg2)
+// Trace calls builtins.trace.
+func (b *Builtins) Trace(first any, second any) (*value.Value, error) {
+	return b.Call("trace", first, second)
 }
 
-// TraceVerbose calls builtins.traceVerbose with 2 Go arguments.
-func (b *Builtins) TraceVerbose(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("traceVerbose", arg1, arg2)
+// TraceVerbose calls builtins.traceVerbose.
+func (b *Builtins) TraceVerbose(expr any, value any) (*value.Value, error) {
+	return b.Call("traceVerbose", expr, value)
 }
 
-// TryEval calls builtins.tryEval with 1 Go argument.
-func (b *Builtins) TryEval(arg1 any) (*value.Value, error) {
-	return b.Call("tryEval", arg1)
+// TryEval calls builtins.tryEval.
+func (b *Builtins) TryEval(expr any) (*value.Value, error) {
+	return b.Call("tryEval", expr)
 }
 
-// TypeOf calls builtins.typeOf with 1 Go argument.
-func (b *Builtins) TypeOf(arg1 any) (*value.Value, error) {
-	return b.Call("typeOf", arg1)
+// TypeOf calls builtins.typeOf.
+func (b *Builtins) TypeOf(expr any) (*value.Value, error) {
+	return b.Call("typeOf", expr)
 }
 
-// UnsafeDiscardOutputDependency calls builtins.unsafeDiscardOutputDependency with 1 Go argument.
-func (b *Builtins) UnsafeDiscardOutputDependency(arg1 any) (*value.Value, error) {
-	return b.Call("unsafeDiscardOutputDependency", arg1)
+// UnsafeDiscardOutputDependency calls builtins.unsafeDiscardOutputDependency.
+func (b *Builtins) UnsafeDiscardOutputDependency(input string) (*value.Value, error) {
+	return b.Call("unsafeDiscardOutputDependency", input)
 }
 
-// UnsafeDiscardStringContext calls builtins.unsafeDiscardStringContext with 1 Go argument.
-func (b *Builtins) UnsafeDiscardStringContext(arg1 any) (*value.Value, error) {
-	return b.Call("unsafeDiscardStringContext", arg1)
+// UnsafeDiscardStringContext calls builtins.unsafeDiscardStringContext.
+func (b *Builtins) UnsafeDiscardStringContext(input any) (*value.Value, error) {
+	return b.Call("unsafeDiscardStringContext", input)
 }
 
-// UnsafeGetAttrPos calls builtins.unsafeGetAttrPos with 2 Go arguments.
-func (b *Builtins) UnsafeGetAttrPos(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("unsafeGetAttrPos", arg1, arg2)
+// UnsafeGetAttrPos calls builtins.unsafeGetAttrPos.
+func (b *Builtins) UnsafeGetAttrPos(name string, set AttrSet) (*value.Value, error) {
+	return b.Call("unsafeGetAttrPos", name, set)
 }
 
-// Warn calls builtins.warn with 2 Go arguments.
-func (b *Builtins) Warn(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("warn", arg1, arg2)
+// Warn calls builtins.warn.
+func (b *Builtins) Warn(message any, value any) (*value.Value, error) {
+	return b.Call("warn", message, value)
 }
 
-// ZipAttrsWith calls builtins.zipAttrsWith with 2 Go arguments.
-func (b *Builtins) ZipAttrsWith(arg1 any, arg2 any) (*value.Value, error) {
-	return b.Call("zipAttrsWith", arg1, arg2)
+// ZipAttrsWith calls builtins.zipAttrsWith.
+func (b *Builtins) ZipAttrsWith(function Function, list any) (*value.Value, error) {
+	return b.Call("zipAttrsWith", function, list)
 }
 
-// FetchURL calls builtins.fetchurl with 1 Go argument.
-func (b *Builtins) FetchURL(arg1 any) (*value.Value, error) {
-	return b.Call("fetchurl", arg1)
+// FetchURL calls builtins.fetchurl.
+func (b *Builtins) FetchURL(args any) (*value.Value, error) {
+	return b.Call("fetchurl", args)
 }
 
-// FlakeRefToString calls builtins.flakeRefToString with 1 Go argument.
-func (b *Builtins) FlakeRefToString(arg1 any) (*value.Value, error) {
-	return b.Call("flakeRefToString", arg1)
+// FlakeRefToString calls builtins.flakeRefToString.
+func (b *Builtins) FlakeRefToString(attrs FlakeRefAttrs) (*value.Value, error) {
+	return b.Call("flakeRefToString", attrs)
 }
 
-// Derivation calls builtins.derivation with 1 Go argument.
-func (b *Builtins) Derivation(arg1 any) (*value.Value, error) {
-	return b.Call("derivation", arg1)
+// Derivation calls builtins.derivation.
+func (b *Builtins) Derivation(attrs DerivationAttrs) (*value.Value, error) {
+	return b.Call("derivation", attrs)
 }
-
