@@ -28,6 +28,9 @@ func NewDesc(callbacks Callbacks) *Desc {
 
 // New creates an external value from Go-managed data.
 func New(ctx *util.Context, desc *Desc, data any) (*Value, error) {
+	if ctx == nil || ctx.Internal() == nil || desc == nil {
+		return nil, fmt.Errorf("nix: context and external descriptor are required")
+	}
 	v := cext.Create(ctx.Internal(), desc, data)
 	if v == nil {
 		if err := ctx.Err(); err != nil {
@@ -40,6 +43,9 @@ func New(ctx *util.Context, desc *Desc, data any) (*Value, error) {
 
 // FromPointer wraps a borrowed C ExternalValue pointer with an additional Nix GC reference.
 func FromPointer(ctx *util.Context, ptr unsafe.Pointer) (*Value, error) {
+	if ctx == nil || ctx.Internal() == nil || ptr == nil {
+		return nil, fmt.Errorf("nix: context and external value pointer are required")
+	}
 	v := cext.Wrap(ctx.Internal(), ptr)
 	if v == nil {
 		if err := ctx.Err(); err != nil {
@@ -60,7 +66,7 @@ func (v *Value) Close() {
 
 // Content returns the opaque Go data associated with the external value.
 func (v *Value) Content(ctx *util.Context) any {
-	if v == nil || v.c == nil {
+	if v == nil || v.c == nil || ctx == nil || ctx.Internal() == nil {
 		return nil
 	}
 	return v.c.Content(ctx.Internal())
