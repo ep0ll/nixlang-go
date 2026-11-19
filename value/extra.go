@@ -153,3 +153,21 @@ func (r *RealisedString) StorePaths() ([]*nixstore.Path, error) {
 	}
 	return paths, nil
 }
+
+// Retain creates an independently closeable reference to the same Nix value.
+// The returned value belongs to the same evaluator state and must be closed
+// separately. Retain is useful when a value must outlive the wrapper that
+// originally returned it.
+func (v *Value) Retain() (*Value, error) {
+	if err := v.ensureOpen(); err != nil {
+		return nil, err
+	}
+	retained, code := v.c.Retain(v.ctx.Internal())
+	if err := v.ctx.Check(util.ErrorCode(code)); err != nil {
+		return nil, err
+	}
+	if retained == nil {
+		return nil, fmt.Errorf("nix: failed to retain value")
+	}
+	return FromInternal(v.ctx, v.state, retained), nil
+}

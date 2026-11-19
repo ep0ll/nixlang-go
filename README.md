@@ -82,3 +82,139 @@ Close contexts, stores, states, values, descriptors, and other owned handles whe
 ## License
 
 LGPL-2.1-or-later (aligned with Nix).
+
+## Nix expression builtins from Go
+
+The `builtins` package exposes the Nix 2.35.6 evaluator builtin set through
+ordinary Go APIs. It does not reimplement Nix builtin semantics: calls are
+dispatched to the active Nix evaluator through the generic C API value-call
+interface. You pass Go values, and the package converts them into evaluator
+values before calling the actual builtin.
+
+```go
+import (
+    "crypto"
+    "net/url"
+
+    "github.com/ep0ll/nixlang-go/builtins"
+)
+
+b, err := builtins.New(state)
+if err != nil {
+    return err
+}
+defer b.Close()
+
+// Generated, arity-specific Go wrapper.
+sum, err := b.Add(builtins.Integer(20), builtins.Integer(22))
+if err != nil {
+    return err
+}
+defer sum.Close()
+n, err := sum.Int() // 42
+
+// Go slices and maps become Nix lists and attribute sets.
+joined, err := b.CallString("concatStringsSep", "/", []string{"usr", "local", "bin"})
+answer, err := b.GetAttr("answer", map[string]any{"answer": 42})
+
+// Use builtins.Path when a Go string must be a Nix path, rather than a string.
+isPath, err := b.IsPath(builtins.Path("./src"))
+
+// Wrap an evaluated Nix closure before passing it to higher-order builtins.
+fnValue, err := state.EvalString("x: x + 1", ".")
+defer fnValue.Close()
+fn, err := builtins.NewFunction(fnValue)
+defer fn.Close()
+mapped, err := b.Map(fn, []any{1, 2, 3})
+```
+
+Supported Go arguments include `nil`, booleans, signed and unsigned integers
+(fitting Nix's signed 64-bit integer range), floats, strings, `builtins.Path`,
+slices and arrays, string-keyed maps, and `*value.Value` handles from the same
+evaluator state. `[]byte` is treated as a Nix string. Function parameters are
+passed as checked `builtins.Function` values created with
+`builtins.NewFunction` from an evaluator value. Other arbitrary evaluator
+values can be supplied as same-state `*value.Value` handles. Results are
+returned as `*value.Value` so Nix types,
+attribute sets, lists, and store-path string context are not silently flattened.
+
+Use `b.Get(name)` for constants such as `currentTime`, `currentSystem`,
+`nixVersion`, `storeDir`, `langVersion`, and `nixPath`; `b.Names()` and
+`b.Has(name)` inspect the builtin set provided by the running evaluator.
+`builtins.Registry()` describes the Nix 2.35.6 callable catalog, including
+arity and experimental-feature gates. Runtime availability can differ when a
+builtin is feature-gated, platform-dependent, or when the linked Nix version
+differs from 2.35.6.
+
+The generated methods use statically typed Go parameters wherever the
+Nix argument has a clear shape: strings use `string`, integer operands use
+`int64`, function operands use `builtins.Function`, and structured Nix
+attribute sets use named Go structs such as `PathArgs`, `FetchClosureArgs`,
+`ConvertHashArgs`, `DerivationAttrs`, and `FlakeRefAttrs`. Lists with a
+known element type use typed slices, for example `[]string` and
+`[]SearchPathEntry`. Lists with arbitrary Nix values use `[]any` (and
+nested lists use `[][]any`) rather than accepting a scalar `any` parameter. A parameter is `any` only when Nix itself accepts
+multiple distinct Nix value types or an arbitrary expression value (for
+example, `HashFile(algorithm string, path any)` accepts either a Nix path or a
+string path).
+
+```go
+// The hash algorithm uses Go standard-library crypto.Hash constants.
+hash, err := b.HashFile(crypto.SHA256, builtins.Path("./LICENSE"))
+
+// A Nix attribute set represented by a typed Go struct.
+converted, err := b.ConvertHash(builtins.ConvertHashArgs{
+    Hash:         "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    HashAlgo:     crypto.SHA256,
+    ToHashFormat: builtins.HashFormatSRI,
+})
+
+
+// Typed Go inputs for unions and structured fetchers.
+u, err := url.Parse("https://github.com/NixOS/nixpkgs")
+if err != nil {
+    return err
+}
+gitSource, err := b.FetchGit(builtins.FetchGitArgs{URL: u, Rev: "locked-revision"})
+if err != nil {
+    return err
+}
+defer gitSource.Close()
+
+joined, err := b.ConcatStringsSep("/", []builtins.StringCoercible{
+    builtins.StringValue("usr"),
+    builtins.StringValue("local"),
+})
+
+// Higher-order functions take checked Nix function handles.
+fnValue, err := state.EvalString("x: x + 1", ".")
+fn, err := builtins.NewFunction(fnValue)
+defer fn.Close()
+mapped, err := b.Map(fn, []any{1, 2, 3})
+
+// Structured path arguments, including a Nix function predicate.
+path, err := b.Path(builtins.PathArgs{
+    Path:   builtins.Path("./source"),
+    Filter: &fn,
+})
+```
+
+For URL-bearing options the API uses `net/url.URL`; Nix hash algorithms reuse
+`crypto.Hash` (`crypto.MD5`, `crypto.SHA1`, `crypto.SHA256`, and
+`crypto.SHA512`), while Nix-specific hash encodings use the `HashFormat` enum.
+`Path` is a distinct Nix path value; `FilePath` uses `path/filepath` to
+normalize an OS path before creating one, and `StringPath` represents a path
+passed as a Nix string. `Number`, `HashFormat`, and `FlakeRefType` use explicit
+Go types/constants rather than untyped string conventions.
+
+The exported `builtins.Registry()` also records each Nix parameter name and
+its generated Go parameter type in `Spec.Args` and `Spec.GoTypes`. Dynamic
+`Builtins.Call` remains available for plugin-defined or otherwise unusual
+calls, while the generated methods provide the statically typed API.
+
+The catalog includes core `libexpr` primops, string-context and fetcher
+primops, and the three flake primops (`getFlake`, `parseFlakeRef`, and
+`flakeRefToString`). Flake primops are only available when flake settings
+have been added to the evaluator. The optional `importNative` and `exec`
+primops require Nix's native-code setting and are not available on Windows.
+The internal `fetchFinalTree` primop is deliberately not exposed.

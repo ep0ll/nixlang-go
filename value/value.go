@@ -519,7 +519,7 @@ func (v *Value) SetAttrs(attrs map[string]*Value) error {
 		if elem == nil || elem.c == nil || elem.c.Ptr() == nil {
 			return fmt.Errorf("nix: attribute %q has a nil or closed value", name)
 		}
-		if elem.state != v.state {
+		if elem.state == nil || v.state == nil || !elem.state.Same(v.state) {
 			return fmt.Errorf("nix: attribute %q belongs to a different evaluator state", name)
 		}
 	}
@@ -587,10 +587,10 @@ func NewAttrs(ctx *util.Context, state *cexpr.EvalState, attrs map[string]*Value
 		return nil, fmt.Errorf("nix: context and evaluator state are required")
 	}
 	for name, elem := range attrs {
-		if elem == nil || elem.c == nil {
+		if elem == nil || elem.c == nil || elem.c.Ptr() == nil {
 			return nil, fmt.Errorf("nix: attribute %q has a nil or closed value", name)
 		}
-		if elem.state != state {
+		if elem.state == nil || !elem.state.Same(state) {
 			return nil, fmt.Errorf("nix: attribute %q belongs to a different evaluator state", name)
 		}
 	}
