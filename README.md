@@ -53,7 +53,7 @@ for outputName, path := range outputs {
     if err != nil {
         return err
     }
-    fmt.Printf("%s: %s\\n", outputName, realPath)
+    fmt.Printf("%s: %s\n", outputName, realPath)
 }
 ```
 
