@@ -79,7 +79,7 @@ func (b *Builder) SetSetting(key, value string) error {
 
 // Internal returns the low-level builder (for flake integration).
 func (b *Builder) Internal() *cexpr.Builder {
-	if b == nil {
+	if b == nil || b.c == nil || b.c.Ptr() == nil {
 		return nil
 	}
 	return b.c
