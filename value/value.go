@@ -189,6 +189,9 @@ func (v *Value) Path() (string, error) {
 
 // IsNull reports whether the value is null.
 func (v *Value) IsNull() (bool, error) {
+	if err := v.Force(); err != nil {
+		return false, err
+	}
 	typ, err := v.TypeChecked()
 	if err != nil {
 		return false, err
