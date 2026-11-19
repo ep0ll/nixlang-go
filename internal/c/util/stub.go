@@ -71,8 +71,7 @@ func SetVerbosity(ctx *Context, level Verbosity) Err { return OK }
 
 var (
 	strMu    sync.Mutex
-	strSlots         = make(map[uintptr]*string)
-	strNext  uintptr = 1
+	strSlots = make(map[unsafe.Pointer]*string)
 )
 
 func RegisterStringSlot(s *string) unsafe.Pointer {
