@@ -42,8 +42,8 @@ func (t Type) String() string {
 
 // Value is a GC-managed Nix value. Call Close when done.
 type Value struct {
-	c     *cvalue.Value
-	state *cexpr.EvalState
+	c           *cvalue.Value
+	state       *cexpr.EvalState
 	ctx         *util.Context
 	ownsContext bool
 }
@@ -433,37 +433,49 @@ func (v *Value) ensureType(want Type) error {
 
 // SetNull initializes this value to null.
 func (v *Value) SetNull() error {
-	if err := v.ensureOpen(); err != nil { return err }
+	if err := v.ensureOpen(); err != nil {
+		return err
+	}
 	return v.ctx.Check(util.ErrorCode(v.c.InitNull(v.ctx.Internal())))
 }
 
 // SetBool initializes this value to a boolean.
 func (v *Value) SetBool(b bool) error {
-	if err := v.ensureOpen(); err != nil { return err }
+	if err := v.ensureOpen(); err != nil {
+		return err
+	}
 	return v.ctx.Check(util.ErrorCode(v.c.InitBool(v.ctx.Internal(), b)))
 }
 
 // SetInt initializes this value to an integer.
 func (v *Value) SetInt(i int64) error {
-	if err := v.ensureOpen(); err != nil { return err }
+	if err := v.ensureOpen(); err != nil {
+		return err
+	}
 	return v.ctx.Check(util.ErrorCode(v.c.InitInt(v.ctx.Internal(), i)))
 }
 
 // SetFloat initializes this value to a float.
 func (v *Value) SetFloat(f float64) error {
-	if err := v.ensureOpen(); err != nil { return err }
+	if err := v.ensureOpen(); err != nil {
+		return err
+	}
 	return v.ctx.Check(util.ErrorCode(v.c.InitFloat(v.ctx.Internal(), f)))
 }
 
 // SetString initializes this value to a string.
 func (v *Value) SetString(s string) error {
-	if err := v.ensureOpen(); err != nil { return err }
+	if err := v.ensureOpen(); err != nil {
+		return err
+	}
 	return v.ctx.Check(util.ErrorCode(v.c.InitString(v.ctx.Internal(), s)))
 }
 
 // SetPath initializes this value to a path.
 func (v *Value) SetPath(path string) error {
-	if err := v.ensureOpen(); err != nil { return err }
+	if err := v.ensureOpen(); err != nil {
+		return err
+	}
 	return v.ctx.Check(util.ErrorCode(v.c.InitPathString(v.ctx.Internal(), v.state, path)))
 }
 

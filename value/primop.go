@@ -122,7 +122,6 @@ func RegisterPrimOp(
 	return primop.Register(ctx)
 }
 
-
 // SetPrimOp initializes this value as a custom primop function. This is
 // separate from RegisterPrimOp: registration exposes a builtin through the
 // global builtins attrset for subsequently created evaluator states.

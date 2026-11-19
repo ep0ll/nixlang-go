@@ -4,10 +4,10 @@ package value
 import (
 	"fmt"
 
-	cvalue "github.com/ep0ll/nixlang-go/internal/c/value"
 	cstore "github.com/ep0ll/nixlang-go/internal/c/store"
-	"github.com/ep0ll/nixlang-go/util"
+	cvalue "github.com/ep0ll/nixlang-go/internal/c/value"
 	nixstore "github.com/ep0ll/nixlang-go/store"
+	"github.com/ep0ll/nixlang-go/util"
 )
 
 // TypeName returns the Nix type name (e.g. "int", "attrs", "string").
@@ -70,7 +70,6 @@ func (v *Value) RealiseString(allowIFD bool) (buf string, pathCount int, err err
 	}
 	return buf, count, nil
 }
-
 
 // RealisedString owns a realised Nix string and its store-path context.
 // Call Close when finished; the finalizer is only a fallback.

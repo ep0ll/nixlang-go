@@ -24,7 +24,7 @@ import (
 
 var (
 	gcFinalizerMu      sync.Mutex
-	gcFinalizers               = make(map[uintptr]func(unsafe.Pointer))
+	gcFinalizers       = make(map[uintptr]func(unsafe.Pointer))
 	gcFinalizerObjects = make(map[uintptr]uintptr)
 )
 

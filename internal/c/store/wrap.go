@@ -29,7 +29,6 @@ func wrapOwnedStorePath(p *C.StorePath) *StorePath {
 	return path
 }
 
-
 // ClonePath clones a borrowed StorePath returned by another Nix C API object.
 // The returned wrapper owns the cloned reference.
 func ClonePath(p unsafe.Pointer) *StorePath {

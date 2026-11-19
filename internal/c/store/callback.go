@@ -35,7 +35,7 @@ type realiseCallback struct {
 
 var (
 	realiseMu    sync.Mutex
-	realiseSlots = make(map[uintptr]*realiseCallback)
+	realiseSlots         = make(map[uintptr]*realiseCallback)
 	realiseNext  uintptr = 1
 )
 

@@ -220,7 +220,6 @@ func TestStoreURI(t *testing.T) {
 	_ = ctx
 }
 
-
 // TestPrimOpValueLifetime exercises both nix_init_primop and the GC-backed
 // callback handle lifetime: the Go PrimOp wrapper is closed while its Nix
 // value still retains the underlying primop.
@@ -372,14 +371,13 @@ func TestBuildersAndIndexedAttrs(t *testing.T) {
 	}
 }
 
-
 // TestPrimOpStateValuesOutliveCallback verifies values created by the typed
 // callback evaluator remain usable after the callback's borrowed context exits.
 func TestPrimOpStateValuesOutliveCallback(t *testing.T) {
 	ctx, _, state := setupEval(t)
 
 	type capturedValues struct {
-		list     *value.Value
+		list      *value.Value
 		evaluated *value.Value
 	}
 	captured := &capturedValues{}

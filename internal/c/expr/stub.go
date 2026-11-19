@@ -32,11 +32,11 @@ func (b *Builder) Ptr() unsafe.Pointer                 { return nil }
 func Create(ctx *cutil.Context, lookupPath []string, store *cstore.Store) *EvalState {
 	return &EvalState{}
 }
-func WrapState(unsafe.Pointer) *EvalState { return &EvalState{} }
+func WrapState(unsafe.Pointer) *EvalState          { return &EvalState{} }
 func CloneCallbackState(unsafe.Pointer) *EvalState { return &EvalState{} }
-func (s *EvalState) Free()                {}
-func (s *EvalState) Same(other *EvalState) bool { return s != nil && s == other }
-func (s *EvalState) Ptr() unsafe.Pointer  { return nil }
+func (s *EvalState) Free()                         {}
+func (s *EvalState) Same(other *EvalState) bool    { return s != nil && s == other }
+func (s *EvalState) Ptr() unsafe.Pointer           { return nil }
 
 func EvalFromString(ctx *cutil.Context, state *EvalState, expr, path string, value unsafe.Pointer) cutil.Err {
 	return cutil.OK
