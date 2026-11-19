@@ -111,7 +111,7 @@ func TestExistingNixFunctionArgument(t *testing.T) {
 	t.Cleanup(fn.Close)
 	fnValue.Close() // The checked Function owns an independent retained reference.
 
-	mapped, err := b.Map(fn, []int{1, 2, 3})
+	mapped, err := b.Map(fn, []any{1, 2, 3})
 	if err != nil {
 		t.Fatalf("Map: %v", err)
 	}
