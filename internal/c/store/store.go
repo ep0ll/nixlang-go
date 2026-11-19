@@ -142,6 +142,7 @@ func (s *Store) Ptr() *C.Store {
 func stringViaCB(ctx *cutil.Context, call func(cb C.nix_get_string_callback, ud unsafe.Pointer) C.nix_err) (string, cutil.Err) {
 	var out string
 	ud := cutil.RegisterStringSlot(&out)
+	defer cutil.TakeStringSlot(ud)
 	err := cutil.FromCErr(call(C.nix_get_string_callback(C.cgoStoreStringCB), ud))
 	return out, err
 }
@@ -300,6 +301,7 @@ func (p *StorePath) Clone() *StorePath {
 func (p *StorePath) Name() string {
 	var out string
 	ud := cutil.RegisterStringSlot(&out)
+	defer cutil.TakeStringSlot(ud)
 	C.nix_store_path_name(p.ptr, C.nix_get_string_callback(C.cgoStoreStringCB), ud)
 	return out
 }
