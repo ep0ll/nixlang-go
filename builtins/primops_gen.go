@@ -9,8 +9,8 @@ func (b *Builtins) Add(left any, right any) (*value.Value, error) {
 }
 
 // AddDrvOutputDependencies calls builtins.addDrvOutputDependencies.
-func (b *Builtins) AddDrvOutputDependencies(string string) (*value.Value, error) {
-	return b.Call("addDrvOutputDependencies", string)
+func (b *Builtins) AddDrvOutputDependencies(input any) (*value.Value, error) {
+	return b.Call("addDrvOutputDependencies", input)
 }
 
 // AddErrorContext calls builtins.addErrorContext.
