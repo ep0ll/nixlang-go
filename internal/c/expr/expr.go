@@ -136,7 +136,7 @@ func Create(ctx *cutil.Context, lookupPath []string, store *cstore.Store) *EvalS
 	if p == nil {
 		return nil
 	}
-	s := &EvalState{ptr: p, owned: true}
+	s := &EvalState{ptr: p, identity: C.nixgo_expr_state_identity(p), owned: true}
 	runtime.SetFinalizer(s, func(s *EvalState) { s.Free() })
 	return s
 }
