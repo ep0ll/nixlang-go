@@ -28,5 +28,7 @@
 // Finalizers are a safety net only; do not rely on them for timely cleanup.
 // A Value is allocated in its evaluator's memory arena. Keep the owning
 // expr.State open until all Values and realised strings created from that state
-// have been closed, including Values retained from a primop callback.
+// have been closed, including Values created or retained from a primop callback.
+// PrimOpState is callback-scoped; Values it allocates own independent error
+// contexts but still depend on the parent evaluator remaining alive.
 package nixgo
