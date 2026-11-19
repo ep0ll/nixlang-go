@@ -7,7 +7,9 @@
 package builtins
 
 import (
+	"crypto"
 	"fmt"
+	"net/url"
 	"reflect"
 
 	"github.com/ep0ll/nixlang-go/expr"
@@ -189,6 +191,23 @@ func (b *Builtins) CallString(name string, args ...any) (string, error) {
 }
 
 func (b *Builtins) fromGo(input any) (*value.Value, bool, error) {
+	if path, ok := input.(PathLike); ok {
+		input = path.nixPathLike()
+	}
+	if reference, ok := input.(FlakeReference); ok {
+		if err := reference.Validate(); err != nil {
+			return nil, false, err
+		}
+		input = reference.ToNixArgument()
+	}
+	if coercible, ok := input.(StringCoercible); ok {
+		input = coercible.value
+	}
+	if validator, ok := input.(ArgumentValidator); ok {
+		if err := validator.Validate(); err != nil {
+			return nil, false, err
+		}
+	}
 	if function, ok := input.(Function); ok {
 		fn := function.value
 		if fn == nil || fn.Internal() == nil || fn.Internal().Ptr() == nil {
@@ -232,6 +251,47 @@ func (b *Builtins) fromGo(input any) (*value.Value, bool, error) {
 		err = out.SetNull()
 	case Path:
 		err = out.SetPath(string(x))
+	case url.URL:
+		err = out.SetString(x.String())
+	case *url.URL:
+		if x == nil {
+			return fail(fmt.Errorf("URL argument is nil"))
+		}
+		err = out.SetString(x.String())
+	case crypto.Hash:
+		algorithm, algorithmErr := hashAlgorithmName(x)
+		if algorithmErr != nil {
+			return fail(algorithmErr)
+		}
+		err = out.SetString(algorithm)
+	case HashFormat:
+		if x.String() == "" {
+			return fail(fmt.Errorf("invalid Nix hash format"))
+		}
+		err = out.SetString(x.String())
+	case StorePath:
+		err = out.SetString(string(x))
+	case Number:
+		if x.isFloat {
+			err = out.SetFloat(x.float)
+		} else {
+			err = out.SetInt(x.integer)
+		}
+	case ComparisonValue:
+		switch x.kind {
+		case comparisonNumber:
+			if x.number.isFloat {
+				err = out.SetFloat(x.number.float)
+			} else {
+				err = out.SetInt(x.number.integer)
+			}
+		case comparisonString:
+			err = out.SetString(x.text)
+		case comparisonPath:
+			err = out.SetPath(string(x.path))
+		default:
+			return fail(fmt.Errorf("invalid comparison value"))
+		}
 	case string:
 		err = out.SetString(x)
 	case []byte:
