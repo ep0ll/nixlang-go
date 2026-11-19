@@ -1,0 +1,136 @@
+// Code generated from the Nix 2.35.6 primop registrations; DO NOT EDIT by hand.
+package builtins
+
+// Spec describes one callable Nix evaluator builtin.
+type Spec struct {
+    // Name is the attribute name in the builtins set.
+    Name string
+    // Arity is the number of arguments accepted by the fully-applied builtin.
+    Arity int
+    // ExperimentalFeature is the Nix experimental feature gate, if any.
+    ExperimentalFeature string
+    // Optional is true for platform/configuration-dependent builtins.
+    Optional bool
+    // Condition documents the platform or evaluator setting controlling availability.
+    Condition string
+}
+
+// Registry returns the known Nix 2.35.6 callable builtins. The registry includes
+// flake builtins supplied by libflake, plus optional native-code builtins.
+func Registry() []Spec {
+    return append([]Spec(nil), registry...)
+}
+
+var registry = []Spec{
+    {Name: "add", Arity: 2},
+    {Name: "addDrvOutputDependencies", Arity: 1},
+    {Name: "addErrorContext", Arity: 2},
+    {Name: "all", Arity: 2},
+    {Name: "any", Arity: 2},
+    {Name: "appendContext", Arity: 2},
+    {Name: "attrNames", Arity: 1},
+    {Name: "attrValues", Arity: 1},
+    {Name: "baseNameOf", Arity: 1},
+    {Name: "bitAnd", Arity: 2},
+    {Name: "bitOr", Arity: 2},
+    {Name: "bitXor", Arity: 2},
+    {Name: "break", Arity: 1},
+    {Name: "catAttrs", Arity: 2},
+    {Name: "ceil", Arity: 1},
+    {Name: "compareVersions", Arity: 2},
+    {Name: "concatLists", Arity: 1},
+    {Name: "concatMap", Arity: 2},
+    {Name: "concatStringsSep", Arity: 2},
+    {Name: "convertHash", Arity: 1},
+    {Name: "deepSeq", Arity: 2},
+    {Name: "derivationStrict", Arity: 1},
+    {Name: "dirOf", Arity: 1},
+    {Name: "div", Arity: 2},
+    {Name: "elem", Arity: 2},
+    {Name: "elemAt", Arity: 2},
+    {Name: "exec", Arity: 1, Optional: true, Condition: "native-code"},
+    {Name: "fetchClosure", Arity: 1, ExperimentalFeature: "FetchClosure"},
+    {Name: "fetchGit", Arity: 1},
+    {Name: "fetchMercurial", Arity: 1},
+    {Name: "fetchTarball", Arity: 1},
+    {Name: "fetchTree", Arity: 1, ExperimentalFeature: "FetchTree"},
+    {Name: "filter", Arity: 2},
+    {Name: "filterSource", Arity: 2},
+    {Name: "findFile", Arity: 2},
+    {Name: "floor", Arity: 1},
+    {Name: "foldl'", Arity: 3},
+    {Name: "fromJSON", Arity: 1},
+    {Name: "fromTOML", Arity: 1},
+    {Name: "functionArgs", Arity: 1},
+    {Name: "genList", Arity: 2},
+    {Name: "genericClosure", Arity: 1},
+    {Name: "getAttr", Arity: 2},
+    {Name: "getContext", Arity: 1},
+    {Name: "getEnv", Arity: 1},
+    {Name: "getFlake", Arity: 1, ExperimentalFeature: "Flakes"},
+    {Name: "groupBy", Arity: 2},
+    {Name: "hashFile", Arity: 2},
+    {Name: "hashString", Arity: 2},
+    {Name: "hasAttr", Arity: 2},
+    {Name: "hasContext", Arity: 1},
+    {Name: "head", Arity: 1},
+    {Name: "import", Arity: 1},
+    {Name: "importNative", Arity: 2, Optional: true, Condition: "native-code"},
+    {Name: "intersectAttrs", Arity: 2},
+    {Name: "isAttrs", Arity: 1},
+    {Name: "isBool", Arity: 1},
+    {Name: "isFloat", Arity: 1},
+    {Name: "isFunction", Arity: 1},
+    {Name: "isInt", Arity: 1},
+    {Name: "isList", Arity: 1},
+    {Name: "isNull", Arity: 1},
+    {Name: "isPath", Arity: 1},
+    {Name: "isString", Arity: 1},
+    {Name: "length", Arity: 1},
+    {Name: "lessThan", Arity: 2},
+    {Name: "listToAttrs", Arity: 1},
+    {Name: "map", Arity: 2},
+    {Name: "mapAttrs", Arity: 2},
+    {Name: "match", Arity: 2},
+    {Name: "mul", Arity: 2},
+    {Name: "outputOf", Arity: 2, ExperimentalFeature: "DynamicDerivations"},
+    {Name: "parseDrvName", Arity: 1},
+    {Name: "parseFlakeRef", Arity: 1, ExperimentalFeature: "Flakes"},
+    {Name: "partition", Arity: 2},
+    {Name: "path", Arity: 1},
+    {Name: "pathExists", Arity: 1},
+    {Name: "placeholder", Arity: 1},
+    {Name: "readDir", Arity: 1},
+    {Name: "readFile", Arity: 1},
+    {Name: "readFileType", Arity: 1},
+    {Name: "removeAttrs", Arity: 2},
+    {Name: "replaceStrings", Arity: 3},
+    {Name: "scopedImport", Arity: 2},
+    {Name: "seq", Arity: 2},
+    {Name: "sort", Arity: 2},
+    {Name: "split", Arity: 2},
+    {Name: "splitVersion", Arity: 1},
+    {Name: "storePath", Arity: 1},
+    {Name: "stringLength", Arity: 1},
+    {Name: "sub", Arity: 2},
+    {Name: "substring", Arity: 3},
+    {Name: "tail", Arity: 1},
+    {Name: "toFile", Arity: 2},
+    {Name: "toJSON", Arity: 1},
+    {Name: "toPath", Arity: 1},
+    {Name: "toString", Arity: 1},
+    {Name: "toXML", Arity: 1},
+    {Name: "trace", Arity: 2},
+    {Name: "traceVerbose", Arity: 2},
+    {Name: "tryEval", Arity: 1},
+    {Name: "typeOf", Arity: 1},
+    {Name: "unsafeDiscardOutputDependency", Arity: 1},
+    {Name: "unsafeDiscardStringContext", Arity: 1},
+    {Name: "unsafeGetAttrPos", Arity: 2},
+    {Name: "warn", Arity: 2},
+    {Name: "zipAttrsWith", Arity: 2},
+    {Name: "fetchurl", Arity: 1},
+    {Name: "flakeRefToString", Arity: 1, ExperimentalFeature: "Flakes"},
+    // derivation is a Nix-level function from derivation.nix, not a C++ PrimOp.
+    {Name: "derivation", Arity: 1},
+}
