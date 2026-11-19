@@ -238,13 +238,22 @@ func (s *Store) Realise(ctx *cutil.Context, path *StorePath, cb func(outname str
 	}
 
 	reg := registerRealiseCB(cb)
+	userdata := C.nixgo_store_id_to_userdata(C.uintptr_t(reg))
+	if userdata == nil {
+		unregisterRealiseCB(reg)
+		if ctx != nil {
+			_ = ctx.SetErr(cutil.ErrUnknown, "nix: failed to allocate realise callback userdata")
+		}
+		return cutil.ErrUnknown
+	}
 	code := C.nix_store_realise(
 		ctx.Ptr(),
 		s.ptr,
 		path.ptr,
-		C.nixgo_store_id_to_userdata(C.uintptr_t(reg)),
+		userdata,
 		C.nixgo_realise_cb(C.cgoRealiseCB),
 	)
+	C.nixgo_store_userdata_free(userdata)
 	callbackPanic := unregisterRealiseCB(reg)
 	if callbackPanic != nil {
 		if ctx != nil {
