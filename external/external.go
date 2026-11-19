@@ -1,18 +1,18 @@
-// Package external provides support for foreign (external) Nix values.
-//
-// Use this to expose Go-managed data to the Nix evaluator via primops
-// or custom value types.
+// Package external exposes Nix external values to Go callbacks.
 package external
 
 import (
 	"fmt"
+	"unsafe"
 
 	cext "github.com/ep0ll/nixlang-go/internal/c/external"
 	"github.com/ep0ll/nixlang-go/util"
 )
 
-// Desc describes callbacks for an external value class.
-// Keep the Desc alive for as long as any value created with it exists.
+// Callbacks describes the behavior of a Nix external-value class.
+type Callbacks = cext.Callbacks
+
+// Desc describes the callback class used to create external values.
 type Desc = cext.Desc
 
 // Value is a GC-managed external value.
@@ -20,7 +20,13 @@ type Value struct {
 	c *cext.Value
 }
 
-// New creates an external value with the given descriptor and opaque pointer.
+// NewDesc creates a callback descriptor. Call Close after the descriptor is
+// no longer needed; active values keep its C descriptor alive until Nix GC.
+func NewDesc(callbacks Callbacks) *Desc {
+	return cext.NewDesc(callbacks)
+}
+
+// New creates an external value from Go-managed data.
 func New(ctx *util.Context, desc *Desc, data any) (*Value, error) {
 	v := cext.Create(ctx.Internal(), desc, data)
 	if v == nil {
@@ -32,7 +38,19 @@ func New(ctx *util.Context, desc *Desc, data any) (*Value, error) {
 	return &Value{c: v}, nil
 }
 
-// Close releases the GC reference.
+// FromPointer wraps a borrowed C ExternalValue pointer with an additional Nix GC reference.
+func FromPointer(ctx *util.Context, ptr unsafe.Pointer) (*Value, error) {
+	v := cext.Wrap(ctx.Internal(), ptr)
+	if v == nil {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("nix: failed to retain external value")
+	}
+	return &Value{c: v}, nil
+}
+
+// Close releases this Go reference to the external value.
 func (v *Value) Close() {
 	if v != nil && v.c != nil {
 		v.c.Free()
@@ -40,7 +58,18 @@ func (v *Value) Close() {
 	}
 }
 
-// Content returns the opaque data associated with the external value.
+// Content returns the opaque Go data associated with the external value.
 func (v *Value) Content(ctx *util.Context) any {
+	if v == nil || v.c == nil {
+		return nil
+	}
 	return v.c.Content(ctx.Internal())
+}
+
+// Pointer returns the underlying C ExternalValue pointer for value initialization.
+func (v *Value) Pointer() unsafe.Pointer {
+	if v == nil || v.c == nil {
+		return nil
+	}
+	return v.c.Ptr()
 }
