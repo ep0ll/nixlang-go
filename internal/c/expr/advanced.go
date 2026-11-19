@@ -38,21 +38,22 @@ func RegisterGCFinalizer(obj unsafe.Pointer, fn func(unsafe.Pointer)) {
 		return
 	}
 	gcFinalizerMu.Lock()
-	id := gcFinalizerNext
 	gcFinalizerNext++
 	gcFinalizerMu.Unlock()
 
-	userdata := C.nixgo_expr_id_to_userdata(C.uintptr_t(id))
+	userdata := C.nixgo_expr_id_to_userdata(0)
 	if userdata == nil {
 		return
 	}
+	tokenID := uintptr(userdata)
 	objectID := uintptr(obj)
 	gcFinalizerMu.Lock()
 	if previous := gcFinalizerObjects[objectID]; previous != 0 {
 		delete(gcFinalizers, previous)
+		C.nixgo_expr_userdata_free(unsafe.Pointer(previous))
 	}
-	gcFinalizers[id] = fn
-	gcFinalizerObjects[objectID] = id
+	gcFinalizers[tokenID] = fn
+	gcFinalizerObjects[objectID] = tokenID
 	gcFinalizerMu.Unlock()
 	C.nix_gc_register_finalizer(obj, userdata,
 		C.nixgo_gc_finalizer_callback(C.cgoExprGCFinalizer))
