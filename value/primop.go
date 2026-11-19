@@ -60,6 +60,7 @@ func NewPrimOp(
 		}
 		wrappedResult := FromInternal(wrappedContext, state, result)
 		callbackState := &PrimOpState{ctx: wrappedContext, state: state}
+		defer callbackState.Close()
 		if err := fn(data, wrappedContext, callbackState, wrappedArgs, wrappedResult); err != nil {
 			code := cutil.ErrUnknown
 			var nixErr *util.NixError
