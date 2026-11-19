@@ -154,6 +154,22 @@ func (s *State) AllocValue() (*value.Value, error) {
 	return value.FromInternal(s.ctx, s.c, cv), nil
 }
 
+// NewList creates a Nix list in this evaluator state.
+func (s *State) NewList(elems ...*value.Value) (*value.Value, error) {
+	if s == nil || s.c == nil || s.ctx == nil {
+		return nil, fmt.Errorf("nix: evaluator state is closed")
+	}
+	return value.NewList(s.ctx, s.c, elems)
+}
+
+// NewAttrs creates a Nix attribute set in this evaluator state.
+func (s *State) NewAttrs(attrs map[string]*value.Value) (*value.Value, error) {
+	if s == nil || s.c == nil || s.ctx == nil {
+		return nil, fmt.Errorf("nix: evaluator state is closed")
+	}
+	return value.NewAttrs(s.ctx, s.c, attrs)
+}
+
 // EvalString parses and evaluates a Nix expression string.
 // path is the logical file path used to resolve relative paths (use "." if N/A).
 // This only evaluates; it does not build or run any Nix CLI command.
