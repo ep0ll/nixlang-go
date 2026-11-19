@@ -165,3 +165,61 @@ func TestRegistryAndRuntimeDiscovery(t *testing.T) {
 		t.Fatalf("Get(add) type = %s; want function", add.Type())
 	}
 }
+
+
+func TestStaticallyTypedBuiltinArguments(t *testing.T) {
+	state := newEvaluator(t)
+	b, err := nixbuiltins.New(state)
+	if err != nil {
+		t.Fatalf("builtins.New: %v", err)
+	}
+	t.Cleanup(b.Close)
+
+	hash, err := b.HashString("sha256", "hello")
+	if err != nil {
+		t.Fatalf("HashString: %v", err)
+	}
+	t.Cleanup(hash.Close)
+	hashString, err := hash.String()
+	if err != nil {
+		t.Fatalf("HashString result: %v", err)
+	}
+	if hashString == "" {
+		t.Fatal("HashString returned an empty hash")
+	}
+
+	converted, err := b.ConvertHash(nixbuiltins.ConvertHashArgs{
+		Hash:         "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		HashAlgo:     "sha256",
+		ToHashFormat: "sri",
+	})
+	if err != nil {
+		t.Fatalf("ConvertHash: %v", err)
+	}
+	t.Cleanup(converted.Close)
+	convertedString, err := converted.String()
+	if err != nil {
+		t.Fatalf("ConvertHash result: %v", err)
+	}
+	if !strings.HasPrefix(convertedString, "sha256-") {
+		t.Fatalf("ConvertHash result = %q; want SRI sha256 hash", convertedString)
+	}
+
+	joined, err := b.ConcatStringsSep("/", []string{"usr", "local", "bin"})
+	if err != nil {
+		t.Fatalf("ConcatStringsSep: %v", err)
+	}
+	t.Cleanup(joined.Close)
+	if got, err := joined.String(); err != nil || got != "usr/local/bin" {
+		t.Fatalf("ConcatStringsSep result = %q, %v; want usr/local/bin", got, err)
+	}
+
+	appended, err := b.AppendContext("plain", nixbuiltins.StringContext{})
+	if err != nil {
+		t.Fatalf("AppendContext: %v", err)
+	}
+	t.Cleanup(appended.Close)
+	if got, err := appended.String(); err != nil || got != "plain" {
+		t.Fatalf("AppendContext result = %q, %v; want plain", got, err)
+	}
+}
