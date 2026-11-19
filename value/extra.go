@@ -11,11 +11,23 @@ import (
 
 // TypeName returns the Nix type name (e.g. "int", "attrs", "string").
 func (v *Value) TypeName() string {
+	if v == nil || v.c == nil || v.c.Ptr() == nil || v.ctx == nil {
+		return ""
+	}
 	return v.c.GetTypename(v.ctx.Internal())
 }
 
 // CopyFrom copies source into v (both must be allocated on the same state).
 func (v *Value) CopyFrom(source *Value) error {
+	if err := v.ensureOpen(); err != nil {
+		return err
+	}
+	if err := source.ensureOpen(); err != nil {
+		return err
+	}
+	if v.state != source.state {
+		return fmt.Errorf("nix: values belong to different evaluator states")
+	}
 	code := v.c.CopyValue(v.ctx.Internal(), source.c)
 	return v.ctx.Check(util.ErrorCode(code))
 }
@@ -23,6 +35,9 @@ func (v *Value) CopyFrom(source *Value) error {
 // RealiseString forces a string and returns its content plus store-path context count.
 // The returned buffer is the realised string; pathCount is the number of context paths.
 func (v *Value) RealiseString(allowIFD bool) (buf string, pathCount int, err error) {
+	if err := v.ensureOpen(); err != nil {
+		return "", 0, err
+	}
 	rs := cvalue.StringRealise(v.ctx.Internal(), v.state, v.c, allowIFD)
 	if rs == nil {
 		if e := v.ctx.Err(); e != nil {
@@ -44,8 +59,8 @@ type RealisedString struct {
 // RealiseStringWithContext realises a string while preserving its referenced
 // store paths. Use StorePathAt or StorePaths to inspect those references.
 func (v *Value) RealiseStringWithContext(allowIFD bool) (*RealisedString, error) {
-	if v == nil || v.c == nil {
-		return nil, fmt.Errorf("nix: value is closed")
+	if err := v.ensureOpen(); err != nil {
+		return nil, err
 	}
 	realised := cvalue.StringRealise(v.ctx.Internal(), v.state, v.c, allowIFD)
 	if realised == nil {
