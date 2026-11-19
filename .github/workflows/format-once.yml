@@ -1,0 +1,34 @@
+name: Temporary Go formatting pass
+
+on:
+  push:
+    branches: [feat/full-cgo-bindings]
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.event.head_commit.message != 'style: gofmt all Go sources'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.x'
+      - name: Format and commit Go files
+        run: |
+          mapfile -t files < <(git ls-files '*.go')
+          if [ ${#files[@]} -gt 0 ]; then gofmt -w "${files[@]}"; fi
+          if git diff --quiet; then
+            echo 'All Go files are already gofmt clean.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- "${files[@]}"
+          git commit -m 'style: gofmt all Go sources'
+          git push origin "HEAD:${GITHUB_REF_NAME}"
