@@ -209,7 +209,7 @@ func (s *State) Call(fn, arg *value.Value) (*value.Value, error) {
 	if s == nil || s.c == nil || s.ctx == nil || fn == nil || arg == nil ||
 		fn.Internal() == nil || arg.Internal() == nil ||
 		fn.Internal().Ptr() == nil || arg.Internal().Ptr() == nil ||
-		fn.StateInternal() != s.c || arg.StateInternal() != s.c {
+		!fn.StateInternal().Same(s.c) || !arg.StateInternal().Same(s.c) {
 		return nil, fmt.Errorf("nix: evaluator state, function and argument must belong to the same evaluator")
 	}
 	out, err := s.AllocValue()
@@ -233,14 +233,14 @@ func (s *State) CallMulti(fn *value.Value, args ...*value.Value) (*value.Value, 
 	if s == nil || s.c == nil || s.ctx == nil || fn == nil || fn.Internal() == nil || fn.Internal().Ptr() == nil {
 		return nil, fmt.Errorf("nix: evaluator state and function are required")
 	}
-	if fn.StateInternal() != s.c {
+	if !fn.StateInternal().Same(s.c) {
 		return nil, fmt.Errorf("nix: function belongs to a different evaluator state")
 	}
 	for i, arg := range args {
 		if arg == nil || arg.Internal() == nil || arg.Internal().Ptr() == nil {
 			return nil, fmt.Errorf("nix: call argument %d is nil or closed", i)
 		}
-		if arg.StateInternal() != s.c {
+		if !arg.StateInternal().Same(s.c) {
 			return nil, fmt.Errorf("nix: call argument %d belongs to a different evaluator state", i)
 		}
 	}
