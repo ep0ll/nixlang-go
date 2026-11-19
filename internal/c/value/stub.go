@@ -29,7 +29,9 @@ const (
 )
 
 type Value struct {
-	once sync.Once
+	mu    sync.Mutex
+	refs  uint32
+	owned bool
 }
 
 type ListBuilder struct{}
@@ -54,11 +56,7 @@ func Alloc(ctx *cutil.Context, state *cexpr.EvalState) *Value { return &Value{} 
 func (v *Value) Ptr() unsafe.Pointer                 { return nil }
 func (v *Value) CPtr() unsafe.Pointer                { return nil }
 func (v *Value) Incref(ctx *cutil.Context) cutil.Err { return cutil.OK }
-func (v *Value) Decref() {
-	if v != nil {
-		v.once.Do(func() {})
-	}
-}
+func (v *Value) Decref() {}
 func (v *Value) Type(ctx *cutil.Context) ValueType   { return TypeNull }
 func (v *Value) GetBool(ctx *cutil.Context) bool     { return false }
 func (v *Value) GetInt(ctx *cutil.Context) int64     { return 0 }
