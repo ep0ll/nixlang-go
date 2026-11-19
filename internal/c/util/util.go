@@ -5,6 +5,10 @@ package util
 #cgo pkg-config: nix-util-c
 #include <nix_api_util.h>
 #include <stdlib.h>
+#include <stdint.h>
+
+static inline void * nixgo_util_id_to_userdata(uintptr_t id) { return (void *) id; }
+static inline uintptr_t nixgo_util_userdata_to_id(void * ptr) { return (uintptr_t) ptr; }
 */
 import "C"
 import (
@@ -172,14 +176,14 @@ func RegisterStringSlot(s *string) unsafe.Pointer {
 	id := strNext
 	strNext++
 	strSlots[id] = s
-	return unsafe.Pointer(id)
+	return unsafe.Pointer(C.nixgo_util_id_to_userdata(C.uintptr_t(id)))
 }
 
 // TakeStringSlot retrieves and removes a registered string slot.
 func TakeStringSlot(p unsafe.Pointer) *string {
 	strMu.Lock()
 	defer strMu.Unlock()
-	id := uintptr(p)
+	id := uintptr(C.nixgo_util_userdata_to_id(p))
 	s := strSlots[id]
 	delete(strSlots, id)
 	return s
