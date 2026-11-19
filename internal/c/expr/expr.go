@@ -89,7 +89,7 @@ func (b *Builder) SetSetting(ctx *cutil.Context, key, value string) cutil.Err {
 
 // Ptr returns the C builder pointer (for flake integration).
 func (b *Builder) Ptr() *C.nix_eval_state_builder {
-	if b == nil {
+	if b == nil || b.consumed {
 		return nil
 	}
 	return b.ptr
