@@ -90,10 +90,23 @@ func (v *Value) StateInternal() *cexpr.EvalState {
 
 // Type returns the current type (call Force first for thunks).
 func (v *Value) Type() Type {
-	if v == nil || v.c == nil || v.c.Ptr() == nil || v.ctx == nil {
+	typ, err := v.TypeChecked()
+	if err != nil {
 		return TypeFailed
 	}
-	return Type(v.c.Type(v.ctx.Internal()))
+	return typ
+}
+
+// TypeChecked returns the Nix runtime type and propagates C API errors.
+func (v *Value) TypeChecked() (Type, error) {
+	if err := v.ensureOpen(); err != nil {
+		return TypeFailed, err
+	}
+	typ := Type(v.c.Type(v.ctx.Internal()))
+	if err := v.ctx.Err(); err != nil {
+		return TypeFailed, err
+	}
+	return typ, nil
 }
 
 // Force evaluates a thunk in place.
@@ -119,7 +132,11 @@ func (v *Value) Bool() (bool, error) {
 	if err := v.ensureType(TypeBool); err != nil {
 		return false, err
 	}
-	return v.c.GetBool(v.ctx.Internal()), nil
+	got := v.c.GetBool(v.ctx.Internal())
+	if err := v.ctx.Err(); err != nil {
+		return false, err
+	}
+	return got, nil
 }
 
 // Int returns the integer value.
@@ -127,7 +144,11 @@ func (v *Value) Int() (int64, error) {
 	if err := v.ensureType(TypeInt); err != nil {
 		return 0, err
 	}
-	return v.c.GetInt(v.ctx.Internal()), nil
+	got := v.c.GetInt(v.ctx.Internal())
+	if err := v.ctx.Err(); err != nil {
+		return 0, err
+	}
+	return got, nil
 }
 
 // Float returns the float value.
@@ -135,7 +156,11 @@ func (v *Value) Float() (float64, error) {
 	if err := v.ensureType(TypeFloat); err != nil {
 		return 0, err
 	}
-	return v.c.GetFloat(v.ctx.Internal()), nil
+	got := v.c.GetFloat(v.ctx.Internal())
+	if err := v.ctx.Err(); err != nil {
+		return 0, err
+	}
+	return got, nil
 }
 
 // String returns the string contents.
@@ -155,15 +180,20 @@ func (v *Value) Path() (string, error) {
 	if err := v.ensureType(TypePath); err != nil {
 		return "", err
 	}
-	return v.c.GetPathString(v.ctx.Internal()), nil
+	path := v.c.GetPathString(v.ctx.Internal())
+	if err := v.ctx.Err(); err != nil {
+		return "", err
+	}
+	return path, nil
 }
 
 // IsNull reports whether the value is null.
 func (v *Value) IsNull() (bool, error) {
-	if err := v.Force(); err != nil {
+	typ, err := v.TypeChecked()
+	if err != nil {
 		return false, err
 	}
-	return v.Type() == TypeNull, nil
+	return typ == TypeNull, nil
 }
 
 // ListLen returns the length of a list.
@@ -171,7 +201,11 @@ func (v *Value) ListLen() (int, error) {
 	if err := v.ensureType(TypeList); err != nil {
 		return 0, err
 	}
-	return int(v.c.ListSize(v.ctx.Internal())), nil
+	n := int(v.c.ListSize(v.ctx.Internal()))
+	if err := v.ctx.Err(); err != nil {
+		return 0, err
+	}
+	return n, nil
 }
 
 // ListAt returns the element at index i (forced).
@@ -221,7 +255,11 @@ func (v *Value) AttrsLen() (int, error) {
 	if err := v.ensureType(TypeAttrs); err != nil {
 		return 0, err
 	}
-	return int(v.c.AttrsSize(v.ctx.Internal())), nil
+	n := int(v.c.AttrsSize(v.ctx.Internal()))
+	if err := v.ctx.Err(); err != nil {
+		return 0, err
+	}
+	return n, nil
 }
 
 // Attr returns the attribute named name.
@@ -370,7 +408,10 @@ func (v *Value) ensureType(want Type) error {
 	if err := v.Force(); err != nil {
 		return err
 	}
-	got := v.Type()
+	got, err := v.TypeChecked()
+	if err != nil {
+		return err
+	}
 	if got != want {
 		return fmt.Errorf("nix: expected %s, got %s", want, got)
 	}
