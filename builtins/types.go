@@ -132,13 +132,46 @@ func ComparePaths(p Path) ComparisonValue {
 // AttrStringValue, or ValueStringValue.
 type StringCoercible struct {
 	value any
+	valid bool
 }
 
-func StringValue(s string) StringCoercible { return StringCoercible{value: s} }
-func IntegerString(n int64) StringCoercible { return StringCoercible{value: n} }
-func PathStringValue(p Path) StringCoercible { return StringCoercible{value: p} }
-func AttrStringValue(attrs AttrSet) StringCoercible { return StringCoercible{value: attrs} }
-func ValueStringValue(v *value.Value) StringCoercible { return StringCoercible{value: v} }
+func StringValue(s string) StringCoercible {
+	return StringCoercible{value: s, valid: true}
+}
+
+func IntegerString(n int64) StringCoercible {
+	return StringCoercible{value: n, valid: true}
+}
+
+func BooleanString(b bool) StringCoercible {
+	return StringCoercible{value: b, valid: true}
+}
+
+func NullString() StringCoercible {
+	return StringCoercible{valid: true}
+}
+
+func PathStringValue(p Path) StringCoercible {
+	return StringCoercible{value: p, valid: true}
+}
+
+func AttrStringValue(attrs AttrSet) StringCoercible {
+	return StringCoercible{value: attrs, valid: true}
+}
+
+func ValueStringValue(v *value.Value) StringCoercible {
+	return StringCoercible{value: v, valid: true}
+}
+
+func (s StringCoercible) Validate() error {
+	if !s.valid {
+		return fmt.Errorf("string-coercible argument is unset; use a StringCoercible constructor")
+	}
+	if v, ok := s.value.(*value.Value); ok && v == nil {
+		return fmt.Errorf("string-coercible value is nil")
+	}
+	return nil
+}
 
 // Function is an independently retained, checked Nix function value from the
 // same evaluator as Builtins. Keep it alive until lazy results that reference
