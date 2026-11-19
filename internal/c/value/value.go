@@ -57,7 +57,9 @@ type BindingsBuilder struct {
 
 // PrimOp wraps PrimOp.
 type PrimOp struct {
-	ptr *C.PrimOp
+	ptr      *C.PrimOp
+	handle   uintptr
+	userdata unsafe.Pointer
 }
 
 // WrapPtr wraps an existing C nix_value pointer (takes ownership of one ref).
