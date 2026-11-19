@@ -73,17 +73,26 @@ func (v *Value) Internal() *cvalue.Value {
 
 // Type returns the current type (call Force first for thunks).
 func (v *Value) Type() Type {
+	if v == nil || v.c == nil || v.ctx == nil {
+		return TypeFailed
+	}
 	return Type(v.c.Type(v.ctx.Internal()))
 }
 
 // Force evaluates a thunk in place.
 func (v *Value) Force() error {
+	if err := v.ensureOpen(); err != nil {
+		return err
+	}
 	code := cexpr.ValueForce(v.ctx.Internal(), v.state, v.c.Ptr())
 	return v.ctx.Check(util.ErrorCode(code))
 }
 
 // ForceDeep deeply forces the value. Avoid on recursive data.
 func (v *Value) ForceDeep() error {
+	if err := v.ensureOpen(); err != nil {
+		return err
+	}
 	code := cexpr.ValueForceDeep(v.ctx.Internal(), v.state, v.c.Ptr())
 	return v.ctx.Check(util.ErrorCode(code))
 }
@@ -150,6 +159,9 @@ func (v *Value) ListLen() (int, error) {
 
 // ListAt returns the element at index i (forced).
 func (v *Value) ListAt(i int) (*Value, error) {
+	if i < 0 {
+		return nil, fmt.Errorf("nix: list index must not be negative")
+	}
 	if err := v.ensureType(TypeList); err != nil {
 		return nil, err
 	}
@@ -162,6 +174,9 @@ func (v *Value) ListAt(i int) (*Value, error) {
 
 // ListAtLazy returns the element at index i without forcing it.
 func (v *Value) ListAtLazy(i int) (*Value, error) {
+	if i < 0 {
+		return nil, fmt.Errorf("nix: list index must not be negative")
+	}
 	if err := v.ensureType(TypeList); err != nil {
 		return nil, err
 	}
@@ -253,7 +268,11 @@ func (v *Value) HasAttr(name string) (bool, error) {
 	if err := v.ensureType(TypeAttrs); err != nil {
 		return false, err
 	}
-	return v.c.HasAttr(v.ctx.Internal(), v.state, name), nil
+	exists := v.c.HasAttr(v.ctx.Internal(), v.state, name)
+	if err := v.ctx.Err(); err != nil {
+		return false, err
+	}
+	return exists, nil
 }
 
 // AttrNames returns all attribute names sorted lexicographically.
@@ -265,6 +284,9 @@ func (v *Value) AttrNames() ([]string, error) {
 	names := make([]string, 0, n)
 	for i := 0; i < n; i++ {
 		name := v.c.AttrNameByIdx(v.ctx.Internal(), v.state, uint(i))
+		if err := v.ctx.Err(); err != nil {
+			return nil, err
+		}
 		if name != "" {
 			names = append(names, name)
 		}
@@ -283,6 +305,12 @@ func (v *Value) Attrs() (map[string]*Value, error) {
 	for i := 0; i < n; i++ {
 		name, cv := v.c.AttrByIdx(v.ctx.Internal(), v.state, uint(i))
 		if cv == nil {
+			if err := v.ctx.Err(); err != nil {
+				for _, opened := range m {
+					opened.Close()
+				}
+				return nil, err
+			}
 			continue
 		}
 		m[name] = FromInternal(v.ctx, v.state, cv)
@@ -290,7 +318,20 @@ func (v *Value) Attrs() (map[string]*Value, error) {
 	return m, nil
 }
 
+func (v *Value) ensureOpen() error {
+	if v == nil || v.c == nil {
+		return fmt.Errorf("nix: value is closed")
+	}
+	if v.ctx == nil || v.state == nil {
+		return fmt.Errorf("nix: value has no evaluation context")
+	}
+	return nil
+}
+
 func (v *Value) ensureType(want Type) error {
+	if err := v.ensureOpen(); err != nil {
+		return err
+	}
 	if err := v.Force(); err != nil {
 		return err
 	}
@@ -303,31 +344,37 @@ func (v *Value) ensureType(want Type) error {
 
 // SetNull initializes this value to null.
 func (v *Value) SetNull() error {
+	if err := v.ensureOpen(); err != nil { return err }
 	return v.ctx.Check(util.ErrorCode(v.c.InitNull(v.ctx.Internal())))
 }
 
 // SetBool initializes this value to a boolean.
 func (v *Value) SetBool(b bool) error {
+	if err := v.ensureOpen(); err != nil { return err }
 	return v.ctx.Check(util.ErrorCode(v.c.InitBool(v.ctx.Internal(), b)))
 }
 
 // SetInt initializes this value to an integer.
 func (v *Value) SetInt(i int64) error {
+	if err := v.ensureOpen(); err != nil { return err }
 	return v.ctx.Check(util.ErrorCode(v.c.InitInt(v.ctx.Internal(), i)))
 }
 
 // SetFloat initializes this value to a float.
 func (v *Value) SetFloat(f float64) error {
+	if err := v.ensureOpen(); err != nil { return err }
 	return v.ctx.Check(util.ErrorCode(v.c.InitFloat(v.ctx.Internal(), f)))
 }
 
 // SetString initializes this value to a string.
 func (v *Value) SetString(s string) error {
+	if err := v.ensureOpen(); err != nil { return err }
 	return v.ctx.Check(util.ErrorCode(v.c.InitString(v.ctx.Internal(), s)))
 }
 
 // SetPath initializes this value to a path.
 func (v *Value) SetPath(path string) error {
+	if err := v.ensureOpen(); err != nil { return err }
 	return v.ctx.Check(util.ErrorCode(v.c.InitPathString(v.ctx.Internal(), v.state, path)))
 }
 
