@@ -55,6 +55,10 @@ func AllocPrimOp(
 
 	handle := cgo.NewHandle(&primOpCallback{fn: fn, userData: userData, arity: arity})
 	self := C.nixgo_primop_handle_to_ptr(C.uintptr_t(handle))
+	if self == nil {
+		handle.Delete()
+		return nil
+	}
 	cname := C.CString(name)
 	defer C.free(unsafe.Pointer(cname))
 	var cdoc *C.char
@@ -84,10 +88,11 @@ func AllocPrimOp(
 		C.int(arity), cname, cargs, cdoc, self,
 	)
 	if p == nil {
+		C.nixgo_primop_handle_free(self)
 		handle.Delete()
 		return nil
 	}
-	result := &PrimOp{ptr: p, handle: handle}
+	result := &PrimOp{ptr: p, handle: uintptr(handle), userdata: self}
 	runtime.SetFinalizer(result, func(p *PrimOp) { p.Free() })
 	return result
 }
@@ -111,6 +116,7 @@ func (p *PrimOp) Register(ctx *cutil.Context) cutil.Err {
 	// The C API moves the primop into its process-wide registry. The callback
 	// handle must remain live for as long as that registry can call it.
 	p.handle = 0
+	p.userdata = nil // The process-wide registry now owns the callback handle.
 	runtime.SetFinalizer(p, nil)
 	return decrefErr
 }
@@ -128,16 +134,21 @@ func (p *PrimOp) Free() {
 		return
 	}
 	p.ptr = nil
-	handle := p.handle
+	handle := cgo.Handle(p.handle)
+	userdata := p.userdata
 	p.handle = 0
+	p.userdata = nil
 
-	// Free releases only this Go wrapper's C reference. A nix_value may still
-	// retain the primop, so the callback handle is deleted by Nix's GC finalizer
-	// only when the underlying PrimOp is actually collected.
+	// Free releases only this wrapper's reference. A nix_value may retain the
+	// primop; Nix's GC finalizer releases the callback handle after the object
+	// itself is no longer reachable from Nix.
 	if handle != 0 {
 		cexpr.RegisterGCFinalizer(unsafe.Pointer(ptr), func(unsafe.Pointer) {
 			handle.Delete()
+			C.nixgo_primop_handle_free(userdata)
 		})
+	} else if userdata != nil {
+		C.nixgo_primop_handle_free(userdata)
 	}
 	C.nix_gc_decref(nil, unsafe.Pointer(ptr))
 	runtime.SetFinalizer(p, nil)
