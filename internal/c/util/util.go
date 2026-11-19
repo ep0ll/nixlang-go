@@ -6,9 +6,14 @@ package util
 #include <nix_api_util.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdlib.h>
 
-static inline void * nixgo_util_id_to_userdata(uintptr_t id) { return (void *) id; }
-static inline uintptr_t nixgo_util_userdata_to_id(void * ptr) { return (uintptr_t) ptr; }
+static inline void * nixgo_util_userdata_new(uintptr_t id) {
+	uintptr_t *token = (uintptr_t *) malloc(sizeof(uintptr_t));
+	if (token != NULL) *token = id;
+	return token;
+}
+static inline void nixgo_util_userdata_free(void *ptr) { free(ptr); }
 */
 import "C"
 import (
@@ -176,17 +181,28 @@ func RegisterStringSlot(s *string) unsafe.Pointer {
 	defer strMu.Unlock()
 	id := strNext
 	strNext++
-	strSlots[id] = s
-	return unsafe.Pointer(C.nixgo_util_id_to_userdata(C.uintptr_t(id)))
+	token := C.nixgo_util_userdata_new(C.uintptr_t(id))
+	if token == nil {
+		return nil
+	}
+	strSlots[uintptr(token)] = s
+	return token
 }
 
-// TakeStringSlot retrieves and removes a registered string slot.
+// TakeStringSlot retrieves and removes a registered string slot. The opaque
+// token is C-allocated so Nix never retains a pointer into Go memory.
 func TakeStringSlot(p unsafe.Pointer) *string {
+	if p == nil {
+		return nil
+	}
 	strMu.Lock()
 	defer strMu.Unlock()
-	id := uintptr(C.nixgo_util_userdata_to_id(p))
-	s := strSlots[id]
-	delete(strSlots, id)
+	key := uintptr(p)
+	s := strSlots[key]
+	if s != nil {
+		delete(strSlots, key)
+		C.nixgo_util_userdata_free(p)
+	}
 	return s
 }
 
