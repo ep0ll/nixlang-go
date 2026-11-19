@@ -70,9 +70,14 @@ func (s *Store) GetFSClosure(
 	}
 	id := registerFSClosureCallback(cb)
 	defer unregisterFSClosureCallback(id)
+	userdata := C.nixgo_store_id_to_userdata(C.uintptr_t(id))
+	if userdata == nil {
+		return cutil.ErrUnknown
+	}
+	defer C.nixgo_store_userdata_free(userdata)
 	return cutil.FromCErr(C.nix_store_get_fs_closure(
 		ctx.Ptr(), s.ptr, path.ptr,
 		C.bool(flipDirection), C.bool(includeOutputs), C.bool(includeDerivers),
-		unsafe.Pointer(C.nixgo_store_id_to_userdata(C.uintptr_t(id))), C.nixgo_fs_closure_callback(C.cgoStoreFSClosureCB),
+		userdata, C.nixgo_fs_closure_callback(C.cgoStoreFSClosureCB),
 	))
 }
