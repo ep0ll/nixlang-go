@@ -93,8 +93,8 @@ func (s *PrimOpState) EvalString(expression, path string) (*Value, error) {
 	if err != nil {
 		return nil, err
 	}
-	code := cexpr.EvalFromString(s.ctx.Internal(), s.state, expression, path, v.c.Ptr())
-	if err := s.ctx.Check(util.ErrorCode(code)); err != nil {
+	code := cexpr.EvalFromString(v.ctx.Internal(), s.state, expression, path, v.c.Ptr())
+	if err := v.ctx.Check(util.ErrorCode(code)); err != nil {
 		v.Close()
 		return nil, err
 	}
@@ -120,8 +120,8 @@ func (s *PrimOpState) Call(fn, arg *Value) (*Value, error) {
 	if err != nil {
 		return nil, err
 	}
-	code := cexpr.ValueCall(s.ctx.Internal(), s.state, fn.c.Ptr(), arg.c.Ptr(), out.c.Ptr())
-	if err := s.ctx.Check(util.ErrorCode(code)); err != nil {
+	code := cexpr.ValueCall(out.ctx.Internal(), s.state, fn.c.Ptr(), arg.c.Ptr(), out.c.Ptr())
+	if err := out.ctx.Check(util.ErrorCode(code)); err != nil {
 		out.Close()
 		return nil, err
 	}
@@ -151,8 +151,8 @@ func (s *PrimOpState) CallMulti(fn *Value, args ...*Value) (*Value, error) {
 	if err != nil {
 		return nil, err
 	}
-	code := cexpr.ValueCallMulti(s.ctx.Internal(), s.state, fn.c.Ptr(), argPointers, out.c.Ptr())
-	if err := s.ctx.Check(util.ErrorCode(code)); err != nil {
+	code := cexpr.ValueCallMulti(out.ctx.Internal(), s.state, fn.c.Ptr(), argPointers, out.c.Ptr())
+	if err := out.ctx.Check(util.ErrorCode(code)); err != nil {
 		out.Close()
 		return nil, err
 	}
