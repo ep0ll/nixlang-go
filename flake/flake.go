@@ -11,6 +11,7 @@ import (
 	"github.com/ep0ll/nixlang-go/fetchers"
 	cflake "github.com/ep0ll/nixlang-go/internal/c/flake"
 	cvalue "github.com/ep0ll/nixlang-go/internal/c/value"
+	"github.com/ep0ll/nixlang-go/store"
 	"github.com/ep0ll/nixlang-go/util"
 	"github.com/ep0ll/nixlang-go/value"
 )
@@ -254,4 +255,88 @@ func (lf *LockedFlake) OutputAttrs(ctx *util.Context, settings *Settings, state 
 		return nil, fmt.Errorf("nix: failed to wrap output attrs value")
 	}
 	return value.FromInternal(ctx, state.Internal(), cv), nil
+}
+
+
+// RealiseOutput evaluates a selected flake output attribute path, verifies that
+// it is a derivation, and realises its derivation path through the supplied
+// store. The returned output paths are owned by the caller and must be closed.
+// Attribute paths are individual Nix attribute names, not dot-separated text;
+// this permits names that contain dots.
+func (lf *LockedFlake) RealiseOutput(
+	ctx *util.Context,
+	settings *Settings,
+	state *expr.State,
+	st *store.Store,
+	attrPath []string,
+) (map[string]*store.Path, error) {
+	if lf == nil || lf.c == nil || ctx == nil || ctx.Internal() == nil ||
+		settings == nil || settings.c == nil || state == nil || state.Internal() == nil ||
+		st == nil || st.Internal() == nil {
+		return nil, fmt.Errorf("nix: locked flake, context, settings, evaluator state and store are required")
+	}
+	if len(attrPath) == 0 {
+		return nil, fmt.Errorf("nix: flake output attribute path must not be empty")
+	}
+	for i, name := range attrPath {
+		if name == "" {
+			return nil, fmt.Errorf("nix: flake output attribute %d is empty", i)
+		}
+	}
+
+	outputs, err := lf.OutputAttrs(ctx, settings, state)
+	if err != nil {
+		return nil, err
+	}
+	defer outputs.Close()
+
+	selected := outputs
+	owned := make([]*value.Value, 0, len(attrPath))
+	defer func() {
+		for _, v := range owned {
+			v.Close()
+		}
+	}()
+	for _, name := range attrPath {
+		next, attrErr := selected.Attr(name)
+		if attrErr != nil {
+			return nil, fmt.Errorf("nix: select flake output %q: %w", name, attrErr)
+		}
+		owned = append(owned, next)
+		selected = next
+	}
+
+	drvPath, isDerivation, err := state.DerivationPath(selected, false)
+	if err != nil {
+		return nil, fmt.Errorf("nix: inspect flake output %v: %w", attrPath, err)
+	}
+	if !isDerivation || drvPath == nil {
+		return nil, fmt.Errorf("nix: flake output %v is not a derivation", attrPath)
+	}
+	defer drvPath.Close()
+
+	realised := make(map[string]*store.Path)
+	err = st.Realise(drvPath, func(name string, path *store.Path) {
+		if path == nil {
+			return
+		}
+		clone := path.Clone()
+		if clone == nil {
+			panic("nix: failed to clone realised output store path")
+		}
+		if previous := realised[name]; previous != nil {
+			previous.Close()
+		}
+		realised[name] = clone
+	})
+	if err != nil {
+		for _, path := range realised {
+			path.Close()
+		}
+		return nil, fmt.Errorf("nix: realise flake output %v: %w", attrPath, err)
+	}
+	if len(realised) == 0 {
+		return nil, fmt.Errorf("nix: realisation of flake output %v returned no outputs", attrPath)
+	}
+	return realised, nil
 }
