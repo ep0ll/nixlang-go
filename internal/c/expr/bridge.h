@@ -8,3 +8,4 @@ void nixgo_expr_userdata_free(void * userdata);
 
 EvalState * nixgo_expr_clone_callback_state(EvalState * state);
 void nixgo_expr_free_callback_state(EvalState * state);
+void * nixgo_expr_state_identity(EvalState * state);
