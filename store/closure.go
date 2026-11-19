@@ -1,5 +1,12 @@
 package store
 
+import (
+	"fmt"
+
+	cstore "github.com/ep0ll/nixlang-go/internal/c/store"
+	"github.com/ep0ll/nixlang-go/util"
+)
+
 // ClosureOptions controls the direction and members returned by GetFSClosure.
 type ClosureOptions struct {
 	// Reverse follows references to the input path instead of its dependencies.
