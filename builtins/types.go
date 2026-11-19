@@ -8,15 +8,14 @@ import (
 	"github.com/ep0ll/nixlang-go/value"
 )
 
-// Function is a checked Nix function value from the same evaluator as Builtins.
-// Wrap an evaluator value with NewFunction before passing it to higher-order
-// builtins. The underlying *value.Value remains owned by the caller and must
-// stay open for as long as the Function is used.
+// Function is an independently retained, checked Nix function value from the
+// same evaluator as Builtins. Create it with NewFunction and close it when the
+// higher-order calls that use it are complete.
 type Function struct {
 	value *value.Value
 }
 
-// NewFunction validates and wraps a Nix function value.
+// NewFunction validates and independently retains a Nix function value.
 func NewFunction(v *value.Value) (Function, error) {
 	if v == nil || v.Internal() == nil || v.Internal().Ptr() == nil {
 		return Function{}, fmt.Errorf("nix: function value is nil or closed")
@@ -31,10 +30,24 @@ func NewFunction(v *value.Value) (Function, error) {
 	if typ != value.TypeFunction {
 		return Function{}, fmt.Errorf("nix: expected function value, got %s", typ)
 	}
-	return Function{value: v}, nil
+	retained, err := v.Retain()
+	if err != nil {
+		return Function{}, err
+	}
+	return Function{value: retained}, nil
 }
 
-// Value returns the underlying evaluator value. The caller retains ownership.
+// Close releases the retained function value. It is safe to call more than once.
+func (f *Function) Close() {
+	if f == nil || f.value == nil {
+		return
+	}
+	f.value.Close()
+	f.value = nil
+}
+
+// Value returns a borrowed pointer to the retained evaluator value. Do not
+// close the returned value; call Function.Close instead.
 func (f Function) Value() *value.Value {
 	return f.value
 }
