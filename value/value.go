@@ -58,17 +58,19 @@ func FromInternal(ctx *util.Context, state *cexpr.EvalState, cv *cvalue.Value) *
 
 // Close decrements the GC reference. Idempotent.
 func (v *Value) Close() {
-	if v != nil {
-		if v.c != nil {
-			v.c.Decref()
-			v.c = nil
-		}
-		if v.ownsContext && v.ctx != nil {
-			v.ctx.Close()
-			v.ctx = nil
-			v.ownsContext = false
-		}
+	if v == nil {
+		return
 	}
+	if v.c != nil {
+		v.c.Decref()
+		v.c = nil
+	}
+	if v.ownsContext && v.ctx != nil {
+		v.ctx.Close()
+	}
+	v.ctx = nil
+	v.state = nil
+	v.ownsContext = false
 }
 
 // Internal returns the low-level value.
