@@ -7,6 +7,7 @@ package value
 #include <nix_api_expr.h>
 #include <nix_api_util.h>
 #include <stdlib.h>
+#include "primop_bridge.h"
 
 typedef void (*nixgo_primop_callback)(
     void *, nix_c_context *, EvalState *, nix_value **, nix_value *);
@@ -16,6 +17,7 @@ import "C"
 import (
 	"fmt"
 	"runtime"
+	"runtime/cgo"
 	"sync"
 	"unsafe"
 
@@ -35,26 +37,9 @@ type primOpCallback struct {
 }
 
 var (
-	primOpMu        sync.RWMutex
-	primOpCallbacks = make(map[uintptr]*primOpCallback)
-	primOpOwners    = make(map[*PrimOp]uintptr)
-	primOpNext      uintptr = 1
+	primOpMu     sync.Mutex
+	primOpOwners = make(map[*PrimOp]cgo.Handle)
 )
-
-func registerPrimOpCallback(callback *primOpCallback) uintptr {
-	primOpMu.Lock()
-	defer primOpMu.Unlock()
-	id := primOpNext
-	primOpNext++
-	primOpCallbacks[id] = callback
-	return id
-}
-
-func primOpCallbackFor(id uintptr) *primOpCallback {
-	primOpMu.RLock()
-	defer primOpMu.RUnlock()
-	return primOpCallbacks[id]
-}
 
 // AllocPrimOp creates a C API primop. The returned primop is not visible to
 // evaluator states until Register succeeds. Call Free if it is not registered.
@@ -67,12 +52,15 @@ func AllocPrimOp(
 	doc string,
 	userData any,
 ) *PrimOp {
-	if fn == nil || arity < 0 {
-		_ = ctx.SetErr(cutil.ErrUnknown, "nix: primop requires a callback and non-negative arity")
+	if fn == nil || arity < 0 || arity > int(^uint32(0)>>1) || len(argNames) != arity || name == "" {
+		if ctx != nil {
+			_ = ctx.SetErr(cutil.ErrUnknown, "nix: primop requires a name, callback, non-negative arity and one argument name per parameter")
+		}
 		return nil
 	}
 
-	callbackID := registerPrimOpCallback(&primOpCallback{fn: fn, userData: userData, arity: arity})
+	handle := cgo.NewHandle(&primOpCallback{fn: fn, userData: userData, arity: arity})
+	self := C.nixgo_primop_handle_to_ptr(C.uintptr_t(handle))
 	cname := C.CString(name)
 	defer C.free(unsafe.Pointer(cname))
 	var cdoc *C.char
@@ -99,17 +87,15 @@ func AllocPrimOp(
 
 	p := C.nix_alloc_primop(
 		ctx.Ptr(), C.nixgo_primop_callback(C.cgoNixPrimOpCB),
-		C.int(arity), cname, cargs, cdoc, unsafe.Pointer(callbackID),
+		C.int(arity), cname, cargs, cdoc, self,
 	)
 	if p == nil {
-		primOpMu.Lock()
-		delete(primOpCallbacks, callbackID)
-		primOpMu.Unlock()
+		handle.Delete()
 		return nil
 	}
 	result := &PrimOp{ptr: p}
 	primOpMu.Lock()
-	primOpOwners[result] = callbackID
+	primOpOwners[result] = handle
 	primOpMu.Unlock()
 	runtime.SetFinalizer(result, func(p *PrimOp) { p.Free() })
 	return result
@@ -127,7 +113,8 @@ func (p *PrimOp) Register(ctx *cutil.Context) cutil.Err {
 	}
 
 	// The API explicitly requires releasing the caller's reference after the
-	// contents have been moved into the global registry.
+	// contents have been moved into the global registry. The callback handle
+	// remains live for the process lifetime because the global registry owns it.
 	decrefErr := cutil.FromCErr(C.nix_gc_decref(ctx.Ptr(), unsafe.Pointer(p.ptr)))
 	p.ptr = nil
 	primOpMu.Lock()
@@ -137,8 +124,9 @@ func (p *PrimOp) Register(ctx *cutil.Context) cutil.Err {
 	return decrefErr
 }
 
-// Free releases an unregistered primop. Registered callbacks are retained for
-// the process lifetime because the global Nix registry may invoke them later.
+// Free releases an unregistered primop and its callback handle. Registered
+// callbacks are retained for the process lifetime because the global Nix
+// registry may invoke them later.
 func (p *PrimOp) Free() {
 	if p == nil {
 		return
@@ -150,13 +138,13 @@ func (p *PrimOp) Free() {
 	}
 	p.ptr = nil
 	primOpMu.Lock()
-	id := primOpOwners[p]
+	handle := primOpOwners[p]
 	delete(primOpOwners, p)
-	if id != 0 {
-		delete(primOpCallbacks, id)
-	}
 	primOpMu.Unlock()
 	C.nix_gc_decref(nil, unsafe.Pointer(ptr))
+	if handle != 0 {
+		handle.Delete()
+	}
 	runtime.SetFinalizer(p, nil)
 }
 
