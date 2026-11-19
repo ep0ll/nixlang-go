@@ -266,6 +266,18 @@ func (v *Value) AttrByIdx(ctx *cutil.Context, state *cexpr.EvalState, idx uint) 
 	return name, WrapPtr(unsafe.Pointer(p))
 }
 
+// AttrByIdxLazy returns the attribute name and value without forcing the value.
+// The attribute set itself must already be evaluated. The returned value is owned
+// by the caller and must be decremented when no longer needed.
+func (v *Value) AttrByIdxLazy(ctx *cutil.Context, state *cexpr.EvalState, idx uint) (name string, val *Value) {
+	var cname *C.char
+	p := C.nix_get_attr_byidx_lazy(ctx.Ptr(), v.ptr, state.Ptr(), C.uint(idx), &cname)
+	if cname != nil {
+		name = C.GoString(cname)
+	}
+	return name, WrapPtr(unsafe.Pointer(p))
+}
+
 // AttrNameByIdx returns only the attribute name at index.
 func (v *Value) AttrNameByIdx(ctx *cutil.Context, state *cexpr.EvalState, idx uint) string {
 	p := C.nix_get_attr_name_byidx(ctx.Ptr(), v.ptr, state.Ptr(), C.uint(idx))
@@ -304,6 +316,15 @@ func (v *Value) Retain(ctx *cutil.Context) (*Value, cutil.Err) {
 		return nil, cutil.FromCErr(err)
 	}
 	return WrapPtr(unsafe.Pointer(ptr)), cutil.OK
+}
+
+// InitPrimOp initializes value to the supplied primop. Nix retains the
+// primop reference as part of the value; the caller keeps ownership of op.
+func (v *Value) InitPrimOp(ctx *cutil.Context, op *PrimOp) cutil.Err {
+	if v == nil || v.ptr == nil || op == nil || op.ptr == nil {
+		return cutil.ErrUnknown
+	}
+	return cutil.FromCErr(C.nix_init_primop(ctx.Ptr(), v.ptr, op.ptr))
 }
 
 // InitNull initializes to null.
