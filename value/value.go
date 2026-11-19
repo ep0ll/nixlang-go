@@ -71,6 +71,15 @@ func (v *Value) Internal() *cvalue.Value {
 	return v.c
 }
 
+// StateInternal returns the evaluator state associated with this value.
+// It is intended for integration between the public subpackages.
+func (v *Value) StateInternal() *cexpr.EvalState {
+	if v == nil {
+		return nil
+	}
+	return v.state
+}
+
 // Type returns the current type (call Force first for thunks).
 func (v *Value) Type() Type {
 	if v == nil || v.c == nil || v.ctx == nil {
