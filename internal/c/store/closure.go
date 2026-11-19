@@ -18,9 +18,9 @@ import (
 )
 
 var (
-	fsClosureMu sync.Mutex
-	fsClosureCallbacks = make(map[uintptr]func(*StorePath))
-	fsClosureNext uintptr = 1
+	fsClosureMu        sync.Mutex
+	fsClosureCallbacks         = make(map[uintptr]func(*StorePath))
+	fsClosureNext      uintptr = 1
 )
 
 func registerFSClosureCallback(cb func(*StorePath)) uintptr {

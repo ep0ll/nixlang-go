@@ -40,7 +40,9 @@ type PrimOp struct{}
 type RealisedString struct{}
 
 func WrapBorrowedPtr(p unsafe.Pointer) *Value {
-	if p == nil { return nil }
+	if p == nil {
+		return nil
+	}
 	return &Value{}
 }
 
@@ -56,7 +58,7 @@ func Alloc(ctx *cutil.Context, state *cexpr.EvalState) *Value { return &Value{} 
 func (v *Value) Ptr() unsafe.Pointer                 { return nil }
 func (v *Value) CPtr() unsafe.Pointer                { return nil }
 func (v *Value) Incref(ctx *cutil.Context) cutil.Err { return cutil.OK }
-func (v *Value) Decref() {}
+func (v *Value) Decref()                             {}
 func (v *Value) Type(ctx *cutil.Context) ValueType   { return TypeNull }
 func (v *Value) GetBool(ctx *cutil.Context) bool     { return false }
 func (v *Value) GetInt(ctx *cutil.Context) int64     { return 0 }
@@ -88,14 +90,14 @@ func (v *Value) AttrByIdx(ctx *cutil.Context, state *cexpr.EvalState, idx uint) 
 func (v *Value) AttrNameByIdx(ctx *cutil.Context, state *cexpr.EvalState, idx uint) string {
 	return ""
 }
-func (v *Value) InitNull(ctx *cutil.Context) cutil.Err             { return cutil.OK }
-func (v *Value) GetExternal(ctx *cutil.Context) unsafe.Pointer { return nil }
+func (v *Value) InitNull(ctx *cutil.Context) cutil.Err                              { return cutil.OK }
+func (v *Value) GetExternal(ctx *cutil.Context) unsafe.Pointer                      { return nil }
 func (v *Value) InitExternal(ctx *cutil.Context, external unsafe.Pointer) cutil.Err { return cutil.OK }
-func (v *Value) Retain(ctx *cutil.Context) (*Value, cutil.Err) { return &Value{}, cutil.OK }
-func (v *Value) InitBool(ctx *cutil.Context, b bool) cutil.Err     { return cutil.OK }
-func (v *Value) InitInt(ctx *cutil.Context, i int64) cutil.Err     { return cutil.OK }
-func (v *Value) InitFloat(ctx *cutil.Context, f float64) cutil.Err { return cutil.OK }
-func (v *Value) InitString(ctx *cutil.Context, s string) cutil.Err { return cutil.OK }
+func (v *Value) Retain(ctx *cutil.Context) (*Value, cutil.Err)                      { return &Value{}, cutil.OK }
+func (v *Value) InitBool(ctx *cutil.Context, b bool) cutil.Err                      { return cutil.OK }
+func (v *Value) InitInt(ctx *cutil.Context, i int64) cutil.Err                      { return cutil.OK }
+func (v *Value) InitFloat(ctx *cutil.Context, f float64) cutil.Err                  { return cutil.OK }
+func (v *Value) InitString(ctx *cutil.Context, s string) cutil.Err                  { return cutil.OK }
 func (v *Value) InitPathString(ctx *cutil.Context, state *cexpr.EvalState, path string) cutil.Err {
 	return cutil.OK
 }

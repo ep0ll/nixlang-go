@@ -125,14 +125,18 @@ func Create(ctx *cutil.Context, lookupPath []string, store *cstore.Store) *EvalS
 // WrapState creates a borrowed Go view of an evaluator state owned by Nix.
 // Free invalidates only the Go view and does not release the underlying state.
 func WrapState(p unsafe.Pointer) *EvalState {
-	if p == nil { return nil }
+	if p == nil {
+		return nil
+	}
 	return &EvalState{ptr: (*C.EvalState)(p)}
 }
 
 // Free releases an owned EvalState. Borrowed callback views are only invalidated.
 func (s *EvalState) Free() {
 	if s != nil && s.ptr != nil {
-		if s.owned { C.nix_state_free(s.ptr) }
+		if s.owned {
+			C.nix_state_free(s.ptr)
+		}
 		s.ptr = nil
 		runtime.SetFinalizer(s, nil)
 	}

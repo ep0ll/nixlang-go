@@ -2,14 +2,14 @@
 //
 // Import the subpackages you need:
 //
-//   github.com/ep0ll/nixlang-go/util      — contexts, errors, settings
-//   github.com/ep0ll/nixlang-go/store     — stores, paths, closures
-//   github.com/ep0ll/nixlang-go/expr      — evaluator states and expression calls
-//   github.com/ep0ll/nixlang-go/value     — typed values and custom primops
-//   github.com/ep0ll/nixlang-go/external  — Go-backed external values
-//   github.com/ep0ll/nixlang-go/fetchers  — fetcher settings
-//   github.com/ep0ll/nixlang-go/flake     — flake references, locks, outputs
-//   github.com/ep0ll/nixlang-go/nixmain   — plugin initialization and log format
+//	github.com/ep0ll/nixlang-go/util      — contexts, errors, settings
+//	github.com/ep0ll/nixlang-go/store     — stores, paths, closures
+//	github.com/ep0ll/nixlang-go/expr      — evaluator states and expression calls
+//	github.com/ep0ll/nixlang-go/value     — typed values and custom primops
+//	github.com/ep0ll/nixlang-go/external  — Go-backed external values
+//	github.com/ep0ll/nixlang-go/fetchers  — fetcher settings
+//	github.com/ep0ll/nixlang-go/flake     — flake references, locks, outputs
+//	github.com/ep0ll/nixlang-go/nixmain   — plugin initialization and log format
 //
 // This module binds Nix's exported C API. It is not a binding of the complete
 // Nix C++ implementation, internal C++ classes, CLI, or daemon protocols.

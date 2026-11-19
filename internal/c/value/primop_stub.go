@@ -16,5 +16,5 @@ func AllocPrimOp(ctx *cutil.Context, fn PrimOpFunc, arity int, name string, argN
 }
 
 func (p *PrimOp) Register(ctx *cutil.Context) cutil.Err { return cutil.ErrUnknown }
-func (p *PrimOp) Free()                                {}
-func (p *PrimOp) Ptr() unsafe.Pointer                  { return nil }
+func (p *PrimOp) Free()                                 {}
+func (p *PrimOp) Ptr() unsafe.Pointer                   { return nil }

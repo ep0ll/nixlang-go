@@ -7,10 +7,10 @@ package flake
 import (
 	"fmt"
 
-	cflake "github.com/ep0ll/nixlang-go/internal/c/flake"
-	cvalue "github.com/ep0ll/nixlang-go/internal/c/value"
 	"github.com/ep0ll/nixlang-go/expr"
 	"github.com/ep0ll/nixlang-go/fetchers"
+	cflake "github.com/ep0ll/nixlang-go/internal/c/flake"
+	cvalue "github.com/ep0ll/nixlang-go/internal/c/value"
 	"github.com/ep0ll/nixlang-go/util"
 	"github.com/ep0ll/nixlang-go/value"
 )

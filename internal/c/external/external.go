@@ -24,21 +24,21 @@ import (
 // callback returns. Errors from string conversion callbacks cause conversion
 // to fail according to the Nix external-value contract.
 type Callbacks struct {
-	Print func(data any, emit func(string) error)
-	ShowType func(data any) string
-	TypeOf func(data any) string
-	CoerceToString func(data any, coerceMore, copyToStore bool, addContext func(string) error) (string, error)
-	Equal func(left, right any) bool
+	Print            func(data any, emit func(string) error)
+	ShowType         func(data any) string
+	TypeOf           func(data any) string
+	CoerceToString   func(data any, coerceMore, copyToStore bool, addContext func(string) error) (string, error)
+	Equal            func(left, right any) bool
 	PrintValueAsJSON func(data any, state unsafe.Pointer, strict, copyToStore bool, addContext func(string) error) (string, error)
-	PrintValueAsXML func(data any, state unsafe.Pointer, strict, location bool, doc, stringContext, drvsSeen unsafe.Pointer, pos int, addContext func(string) error)
+	PrintValueAsXML  func(data any, state unsafe.Pointer, strict, location bool, doc, stringContext, drvsSeen unsafe.Pointer, pos int, addContext func(string) error)
 }
 
 type Desc struct {
-	mu sync.Mutex
-	ptr *C.NixCExternalValueDesc
+	mu        sync.Mutex
+	ptr       *C.NixCExternalValueDesc
 	callbacks Callbacks
-	refs int
-	closed bool
+	refs      int
+	closed    bool
 }
 
 type externalInstance struct {
@@ -48,7 +48,7 @@ type externalInstance struct {
 
 // Value wraps a Nix ExternalValue reference.
 type Value struct {
-	ptr *C.ExternalValue
+	ptr  *C.ExternalValue
 	once sync.Once
 }
 
@@ -57,13 +57,27 @@ type Value struct {
 // all values created from it have been collected by Nix.
 func NewDesc(callbacks Callbacks) *Desc {
 	var flags C.uint32_t
-	if callbacks.Print != nil { flags |= C.NIXGO_EXTERNAL_PRINT }
-	if callbacks.ShowType != nil { flags |= C.NIXGO_EXTERNAL_SHOW_TYPE }
-	if callbacks.TypeOf != nil { flags |= C.NIXGO_EXTERNAL_TYPE_OF }
-	if callbacks.CoerceToString != nil { flags |= C.NIXGO_EXTERNAL_COERCE }
-	if callbacks.Equal != nil { flags |= C.NIXGO_EXTERNAL_EQUAL }
-	if callbacks.PrintValueAsJSON != nil { flags |= C.NIXGO_EXTERNAL_JSON }
-	if callbacks.PrintValueAsXML != nil { flags |= C.NIXGO_EXTERNAL_XML }
+	if callbacks.Print != nil {
+		flags |= C.NIXGO_EXTERNAL_PRINT
+	}
+	if callbacks.ShowType != nil {
+		flags |= C.NIXGO_EXTERNAL_SHOW_TYPE
+	}
+	if callbacks.TypeOf != nil {
+		flags |= C.NIXGO_EXTERNAL_TYPE_OF
+	}
+	if callbacks.CoerceToString != nil {
+		flags |= C.NIXGO_EXTERNAL_COERCE
+	}
+	if callbacks.Equal != nil {
+		flags |= C.NIXGO_EXTERNAL_EQUAL
+	}
+	if callbacks.PrintValueAsJSON != nil {
+		flags |= C.NIXGO_EXTERNAL_JSON
+	}
+	if callbacks.PrintValueAsXML != nil {
+		flags |= C.NIXGO_EXTERNAL_XML
+	}
 	ptr := C.nixgo_external_desc_new(flags)
 	if ptr == nil {
 		return nil

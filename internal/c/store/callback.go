@@ -28,7 +28,7 @@ func cgoStoreStringCB(start *C.char, n C.uint, userData unsafe.Pointer) {
 
 var (
 	realiseMu    sync.Mutex
-	realiseSlots = make(map[uintptr]func(outname string, out *StorePath))
+	realiseSlots         = make(map[uintptr]func(outname string, out *StorePath))
 	realiseNext  uintptr = 1
 )
 

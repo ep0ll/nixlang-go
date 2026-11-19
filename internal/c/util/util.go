@@ -58,7 +58,9 @@ func NewContext() *Context {
 // WrapBorrowedContext wraps a context whose lifetime is controlled by Nix.
 // Free only invalidates the Go view; it never frees the C context.
 func WrapBorrowedContext(p unsafe.Pointer) *Context {
-	if p == nil { return nil }
+	if p == nil {
+		return nil
+	}
 	return &Context{ptr: (*C.nix_c_context)(p)}
 }
 
@@ -77,7 +79,9 @@ func (c *Context) Free() {
 	}
 	c.once.Do(func() {
 		if c.ptr != nil {
-			if c.owned { C.nix_c_context_free(c.ptr) }
+			if c.owned {
+				C.nix_c_context_free(c.ptr)
+			}
 			c.ptr = nil
 		}
 		runtime.SetFinalizer(c, nil)
@@ -157,7 +161,7 @@ func SetVerbosity(ctx *Context, level Verbosity) Err {
 
 var (
 	strMu    sync.Mutex
-	strSlots = make(map[uintptr]*string)
+	strSlots         = make(map[uintptr]*string)
 	strNext  uintptr = 1
 )
 

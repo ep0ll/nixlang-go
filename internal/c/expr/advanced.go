@@ -21,10 +21,10 @@ import (
 )
 
 var (
-	gcFinalizerMu sync.Mutex
-	gcFinalizers = make(map[uintptr]func(unsafe.Pointer))
-	gcFinalizerObjects = make(map[uintptr]uintptr)
-	gcFinalizerNext uintptr = 1
+	gcFinalizerMu      sync.Mutex
+	gcFinalizers               = make(map[uintptr]func(unsafe.Pointer))
+	gcFinalizerObjects         = make(map[uintptr]uintptr)
+	gcFinalizerNext    uintptr = 1
 )
 
 // RegisterGCFinalizer registers a callback invoked when Nix's garbage collector

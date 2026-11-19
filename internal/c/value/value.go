@@ -74,7 +74,9 @@ func WrapPtr(p unsafe.Pointer) *Value {
 // WrapBorrowedPtr wraps a nix_value whose lifetime is owned by the caller.
 // The wrapper never decrements the Nix reference when Decref is called.
 func WrapBorrowedPtr(p unsafe.Pointer) *Value {
-	if p == nil { return nil }
+	if p == nil {
+		return nil
+	}
 	return &Value{ptr: (*C.nix_value)(p)}
 }
 

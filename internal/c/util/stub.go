@@ -71,7 +71,7 @@ func SetVerbosity(ctx *Context, level Verbosity) Err { return OK }
 
 var (
 	strMu    sync.Mutex
-	strSlots = make(map[uintptr]*string)
+	strSlots         = make(map[uintptr]*string)
 	strNext  uintptr = 1
 )
 

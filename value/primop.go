@@ -7,8 +7,8 @@ import (
 	"unsafe"
 
 	cexpr "github.com/ep0ll/nixlang-go/internal/c/expr"
-	cvalue "github.com/ep0ll/nixlang-go/internal/c/value"
 	cutil "github.com/ep0ll/nixlang-go/internal/c/util"
+	cvalue "github.com/ep0ll/nixlang-go/internal/c/value"
 	"github.com/ep0ll/nixlang-go/util"
 )
 

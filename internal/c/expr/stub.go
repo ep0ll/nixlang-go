@@ -31,8 +31,8 @@ func Create(ctx *cutil.Context, lookupPath []string, store *cstore.Store) *EvalS
 	return &EvalState{}
 }
 func WrapState(unsafe.Pointer) *EvalState { return &EvalState{} }
-func (s *EvalState) Free()               {}
-func (s *EvalState) Ptr() unsafe.Pointer { return nil }
+func (s *EvalState) Free()                {}
+func (s *EvalState) Ptr() unsafe.Pointer  { return nil }
 
 func EvalFromString(ctx *cutil.Context, state *EvalState, expr, path string, value unsafe.Pointer) cutil.Err {
 	return cutil.OK

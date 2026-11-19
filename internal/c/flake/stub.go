@@ -34,7 +34,7 @@ func (f *ParseFlags) SetBaseDirectory(ctx *cutil.Context, dir string) cutil.Err 
 func NewLockFlags(ctx *cutil.Context, settings *Settings) *LockFlags {
 	return &LockFlags{}
 }
-func (f *LockFlags) Free() {}
+func (f *LockFlags) Free()                                             {}
 func (f *LockFlags) SetModeCheck(ctx *cutil.Context) cutil.Err         { return cutil.OK }
 func (f *LockFlags) SetModeVirtual(ctx *cutil.Context) cutil.Err       { return cutil.OK }
 func (f *LockFlags) SetModeWriteAsNeeded(ctx *cutil.Context) cutil.Err { return cutil.OK }
