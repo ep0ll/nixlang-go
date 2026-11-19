@@ -41,6 +41,9 @@ func NewPrimOp(
 	doc string,
 	userData any,
 ) (*PrimOp, error) {
+	if ctx == nil || ctx.Internal() == nil {
+		return nil, fmt.Errorf("nix: context is required")
+	}
 	if fn == nil {
 		return nil, fmt.Errorf("nix: primop callback is required")
 	}
@@ -83,6 +86,9 @@ func NewPrimOp(
 func (p *PrimOp) Register(ctx *util.Context) error {
 	if p == nil || p.c == nil {
 		return fmt.Errorf("nix: primop is closed")
+	}
+	if ctx == nil || ctx.Internal() == nil {
+		return fmt.Errorf("nix: context is required")
 	}
 	return ctx.Check(util.ErrorCode(p.c.Register(ctx.Internal())))
 }
