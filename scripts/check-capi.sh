@@ -4,7 +4,7 @@
 set -euo pipefail
 
 packages=(nix-util-c nix-store-c nix-expr-c nix-fetchers-c nix-flake-c nix-main-c)
-headers=(nix_api_util.h nix_api_store.h nix_api_expr.h nix_api_value.h nix_api_external.h nix_api_fetchers.h nix_api_flake.h nix_api_main.h)
+headers=(nix_api_util.h nix_api_store.h nix_api_store/store_path.h nix_api_store/derivation.h nix_api_expr.h nix_api_value.h nix_api_external.h nix_api_fetchers.h nix_api_flake.h nix_api_main.h)
 
 echo '== pkg-config packages ==' 
 for package in "${packages[@]}"; do
