@@ -221,7 +221,11 @@ func (v *Value) ListAt(i int) (*Value, error) {
 	if err := v.ensureType(TypeList); err != nil {
 		return nil, err
 	}
-	if i >= int(v.c.ListSize(v.ctx.Internal())) {
+	n := int(v.c.ListSize(v.ctx.Internal()))
+	if err := v.ctx.Err(); err != nil {
+		return nil, err
+	}
+	if i >= n {
 		return nil, fmt.Errorf("nix: list index %d out of range", i)
 	}
 	cv := v.c.ListByIdx(v.ctx.Internal(), v.state, uint(i))
@@ -306,7 +310,11 @@ func (v *Value) AttrAt(index int) (string, *Value, error) {
 	if err := v.ensureType(TypeAttrs); err != nil {
 		return "", nil, err
 	}
-	if index >= int(v.c.AttrsSize(v.ctx.Internal())) {
+	n := int(v.c.AttrsSize(v.ctx.Internal()))
+	if err := v.ctx.Err(); err != nil {
+		return "", nil, err
+	}
+	if index >= n {
 		return "", nil, fmt.Errorf("nix: attribute index %d out of range", index)
 	}
 	name, cv := v.c.AttrByIdx(v.ctx.Internal(), v.state, uint(index))
