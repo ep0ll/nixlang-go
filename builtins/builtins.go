@@ -189,6 +189,13 @@ func (b *Builtins) CallString(name string, args ...any) (string, error) {
 }
 
 func (b *Builtins) fromGo(input any) (*value.Value, bool, error) {
+	if convertible, ok := input.(AttrConvertible); ok {
+		rv := reflect.ValueOf(input)
+		if rv.Kind() == reflect.Ptr && rv.IsNil() {
+			return nil, false, fmt.Errorf("attribute-set argument is a nil %T", input)
+		}
+		input = convertible.ToNixAttrs()
+	}
 	if existing, ok := input.(*value.Value); ok {
 		if existing == nil || existing.Internal() == nil || existing.Internal().Ptr() == nil {
 			return nil, false, fmt.Errorf("value argument is nil or closed")
