@@ -50,7 +50,7 @@ void nixgo_external_handle_free(void * ptr)
     free(ptr);
 }
 
-void nixgo_external_register_finalizer(void * object, uintptr_t handle)
+void nixgo_external_register_finalizer(void * object, void * userdata)
 {
-    nix_gc_register_finalizer(object, (void *) handle, cgoExternalFinalizer);
+    nix_gc_register_finalizer(object, userdata, cgoExternalFinalizer);
 }
