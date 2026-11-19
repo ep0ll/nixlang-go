@@ -195,4 +195,5 @@ func cgoExternalFinalizer(_ unsafe.Pointer, userdata unsafe.Pointer) {
 	if instance != nil && instance.desc != nil {
 		instance.desc.release()
 	}
+	C.nixgo_external_handle_free(userdata)
 }
