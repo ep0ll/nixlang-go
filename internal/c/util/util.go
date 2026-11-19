@@ -42,16 +42,24 @@ const (
 // Context wraps nix_c_context.
 // Free is idempotent (sync.Once); always call Free/Close explicitly.
 type Context struct {
-	ptr  *C.nix_c_context
-	once sync.Once
+	ptr   *C.nix_c_context
+	once  sync.Once
+	owned bool
 }
 
 // NewContext allocates a new error context.
 func NewContext() *Context {
 	p := C.nix_c_context_create()
-	c := &Context{ptr: p}
+	c := &Context{ptr: p, owned: true}
 	runtime.SetFinalizer(c, func(c *Context) { c.Free() })
 	return c
+}
+
+// WrapBorrowedContext wraps a context whose lifetime is controlled by Nix.
+// Free only invalidates the Go view; it never frees the C context.
+func WrapBorrowedContext(p unsafe.Pointer) *Context {
+	if p == nil { return nil }
+	return &Context{ptr: (*C.nix_c_context)(p)}
 }
 
 // Ptr returns the underlying C pointer (nil-safe).
@@ -69,7 +77,7 @@ func (c *Context) Free() {
 	}
 	c.once.Do(func() {
 		if c.ptr != nil {
-			C.nix_c_context_free(c.ptr)
+			if c.owned { C.nix_c_context_free(c.ptr) }
 			c.ptr = nil
 		}
 		runtime.SetFinalizer(c, nil)
