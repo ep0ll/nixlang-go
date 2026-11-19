@@ -79,7 +79,7 @@ func (b *Builtins) Break(value any) (*value.Value, error) {
 }
 
 // CatAttrs calls builtins.catAttrs.
-func (b *Builtins) CatAttrs(name string, list any) (*value.Value, error) {
+func (b *Builtins) CatAttrs(name string, list []AttrSet) (*value.Value, error) {
 	return b.Call("catAttrs", name, list)
 }
 
@@ -344,8 +344,8 @@ func (b *Builtins) LessThan(left any, right any) (*value.Value, error) {
 }
 
 // ListToAttrs calls builtins.listToAttrs.
-func (b *Builtins) ListToAttrs(list any) (*value.Value, error) {
-	return b.Call("listToAttrs", list)
+func (b *Builtins) ListToAttrs(entries []NameValue) (*value.Value, error) {
+	return b.Call("listToAttrs", entries)
 }
 
 // Map calls builtins.map.
@@ -544,7 +544,7 @@ func (b *Builtins) Warn(message any, value any) (*value.Value, error) {
 }
 
 // ZipAttrsWith calls builtins.zipAttrsWith.
-func (b *Builtins) ZipAttrsWith(function Function, list any) (*value.Value, error) {
+func (b *Builtins) ZipAttrsWith(function Function, list []AttrSet) (*value.Value, error) {
 	return b.Call("zipAttrsWith", function, list)
 }
 
