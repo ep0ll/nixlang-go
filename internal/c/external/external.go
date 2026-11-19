@@ -56,7 +56,15 @@ type Value struct {
 // values; Close prevents new values but defers freeing its C descriptor until
 // all values created from it have been collected by Nix.
 func NewDesc(callbacks Callbacks) *Desc {
-	ptr := C.nixgo_external_desc_new()
+	var flags C.uint32_t
+	if callbacks.Print != nil { flags |= C.NIXGO_EXTERNAL_PRINT }
+	if callbacks.ShowType != nil { flags |= C.NIXGO_EXTERNAL_SHOW_TYPE }
+	if callbacks.TypeOf != nil { flags |= C.NIXGO_EXTERNAL_TYPE_OF }
+	if callbacks.CoerceToString != nil { flags |= C.NIXGO_EXTERNAL_COERCE }
+	if callbacks.Equal != nil { flags |= C.NIXGO_EXTERNAL_EQUAL }
+	if callbacks.PrintValueAsJSON != nil { flags |= C.NIXGO_EXTERNAL_JSON }
+	if callbacks.PrintValueAsXML != nil { flags |= C.NIXGO_EXTERNAL_XML }
+	ptr := C.nixgo_external_desc_new(flags)
 	if ptr == nil {
 		return nil
 	}
