@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"runtime"
 	"runtime/cgo"
-	"sync"
 	"unsafe"
 
 	cexpr "github.com/ep0ll/nixlang-go/internal/c/expr"
@@ -35,11 +34,6 @@ type primOpCallback struct {
 	userData any
 	arity    int
 }
-
-var (
-	primOpMu     sync.Mutex
-	primOpOwners = make(map[*PrimOp]cgo.Handle)
-)
 
 // AllocPrimOp creates a C API primop. The returned primop is not visible to
 // evaluator states until Register succeeds. Call Free if it is not registered.
@@ -93,10 +87,7 @@ func AllocPrimOp(
 		handle.Delete()
 		return nil
 	}
-	result := &PrimOp{ptr: p}
-	primOpMu.Lock()
-	primOpOwners[result] = handle
-	primOpMu.Unlock()
+	result := &PrimOp{ptr: p, handle: handle}
 	runtime.SetFinalizer(result, func(p *PrimOp) { p.Free() })
 	return result
 }
@@ -117,9 +108,9 @@ func (p *PrimOp) Register(ctx *cutil.Context) cutil.Err {
 	// remains live for the process lifetime because the global registry owns it.
 	decrefErr := cutil.FromCErr(C.nix_gc_decref(ctx.Ptr(), unsafe.Pointer(p.ptr)))
 	p.ptr = nil
-	primOpMu.Lock()
-	delete(primOpOwners, p)
-	primOpMu.Unlock()
+	// The C API moves the primop into its process-wide registry. The callback
+	// handle must remain live for as long as that registry can call it.
+	p.handle = 0
 	runtime.SetFinalizer(p, nil)
 	return decrefErr
 }
@@ -137,14 +128,18 @@ func (p *PrimOp) Free() {
 		return
 	}
 	p.ptr = nil
-	primOpMu.Lock()
-	handle := primOpOwners[p]
-	delete(primOpOwners, p)
-	primOpMu.Unlock()
-	C.nix_gc_decref(nil, unsafe.Pointer(ptr))
+	handle := p.handle
+	p.handle = 0
+
+	// Free releases only this Go wrapper's C reference. A nix_value may still
+	// retain the primop, so the callback handle is deleted by Nix's GC finalizer
+	// only when the underlying PrimOp is actually collected.
 	if handle != 0 {
-		handle.Delete()
+		cexpr.RegisterGCFinalizer(unsafe.Pointer(ptr), func(unsafe.Pointer) {
+			handle.Delete()
+		})
 	}
+	C.nix_gc_decref(nil, unsafe.Pointer(ptr))
 	runtime.SetFinalizer(p, nil)
 }
 
