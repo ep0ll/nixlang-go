@@ -202,6 +202,9 @@ func (b *Builtins) fromGo(input any) (*value.Value, bool, error) {
 		input = reference.ToNixArgument()
 	}
 	if coercible, ok := input.(StringCoercible); ok {
+		if err := coercible.Validate(); err != nil {
+			return nil, false, err
+		}
 		input = coercible.value
 	}
 	if validator, ok := input.(ArgumentValidator); ok {
