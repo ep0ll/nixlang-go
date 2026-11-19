@@ -11,10 +11,26 @@ import (
 
 // TypeName returns the Nix type name (e.g. "int", "attrs", "string").
 func (v *Value) TypeName() string {
-	if v == nil || v.c == nil || v.c.Ptr() == nil || v.ctx == nil {
+	name, err := v.TypeNameChecked()
+	if err != nil {
 		return ""
 	}
-	return v.c.GetTypename(v.ctx.Internal())
+	return name
+}
+
+// TypeNameChecked returns the Nix runtime type name and propagates C API errors.
+func (v *Value) TypeNameChecked() (string, error) {
+	if err := v.ensureOpen(); err != nil {
+		return "", err
+	}
+	name := v.c.GetTypename(v.ctx.Internal())
+	if err := v.ctx.Err(); err != nil {
+		return "", err
+	}
+	if name == "" {
+		return "", fmt.Errorf("nix: failed to obtain value type name")
+	}
+	return name, nil
 }
 
 // CopyFrom copies source into v (both must be allocated on the same state).
@@ -46,7 +62,12 @@ func (v *Value) RealiseString(allowIFD bool) (buf string, pathCount int, err err
 		return "", 0, fmt.Errorf("nix: string realise failed")
 	}
 	defer rs.Free()
-	return rs.Buffer(), rs.StorePathCount(), nil
+	buf := rs.Buffer()
+	count := rs.StorePathCount()
+	if err := v.ctx.Err(); err != nil {
+		return "", 0, err
+	}
+	return buf, count, nil
 }
 
 
