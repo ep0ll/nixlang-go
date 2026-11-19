@@ -11,7 +11,9 @@ import (
 )
 
 type EvalState struct{}
-type Builder struct{}
+type Builder struct {
+	consumed bool
+}
 
 func Init(ctx *cutil.Context) cutil.Err { return cutil.OK }
 
