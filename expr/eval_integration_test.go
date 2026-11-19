@@ -371,3 +371,114 @@ func TestBuildersAndIndexedAttrs(t *testing.T) {
 		}
 	}
 }
+
+
+// TestPrimOpStateValuesOutliveCallback verifies values created by the typed
+// callback evaluator remain usable after the callback's borrowed context exits.
+func TestPrimOpStateValuesOutliveCallback(t *testing.T) {
+	ctx, _, state := setupEval(t)
+
+	type capturedValues struct {
+		list     *value.Value
+		evaluated *value.Value
+	}
+	captured := &capturedValues{}
+	t.Cleanup(func() {
+		if captured.list != nil {
+			captured.list.Close()
+		}
+		if captured.evaluated != nil {
+			captured.evaluated.Close()
+		}
+	})
+
+	primop, err := value.NewPrimOp(
+		ctx,
+		func(data any, _ *util.Context, evaluator *value.PrimOpState, _ []*value.Value, result *value.Value) error {
+			captured := data.(*capturedValues)
+
+			first, err := evaluator.AllocValue()
+			if err != nil {
+				return err
+			}
+			if err := first.SetInt(20); err != nil {
+				first.Close()
+				return err
+			}
+
+			second, err := evaluator.AllocValue()
+			if err != nil {
+				first.Close()
+				return err
+			}
+			if err := second.SetInt(22); err != nil {
+				first.Close()
+				second.Close()
+				return err
+			}
+
+			list, err := evaluator.NewList(first, second)
+			first.Close()
+			second.Close()
+			if err != nil {
+				return err
+			}
+			captured.list = list
+
+			evaluated, err := evaluator.EvalString("40 + 2", ".")
+			if err != nil {
+				return err
+			}
+			captured.evaluated = evaluated
+
+			return result.SetInt(42)
+		},
+		0, "goCaptureValues", nil, "Create values through the callback evaluator.", captured,
+	)
+	if err != nil {
+		t.Fatalf("NewPrimOp: %v", err)
+	}
+
+	fn, err := state.AllocValue()
+	if err != nil {
+		t.Fatalf("AllocValue(function): %v", err)
+	}
+	t.Cleanup(fn.Close)
+	if err := fn.SetPrimOp(primop); err != nil {
+		t.Fatalf("SetPrimOp: %v", err)
+	}
+	primop.Close()
+
+	out, err := state.CallMulti(fn)
+	if err != nil {
+		t.Fatalf("CallMulti: %v", err)
+	}
+	t.Cleanup(out.Close)
+	if got, err := out.Int(); err != nil || got != 42 {
+		t.Fatalf("primop result = %d, %v; want 42", got, err)
+	}
+
+	if captured.list == nil {
+		t.Fatal("primop did not retain its list result")
+	}
+	length, err := captured.list.ListLen()
+	if err != nil || length != 2 {
+		t.Fatalf("retained list length = %d, %v; want 2", length, err)
+	}
+	element, err := captured.list.ListAt(1)
+	if err != nil {
+		t.Fatalf("retained list element: %v", err)
+	}
+	elementValue, err := element.Int()
+	element.Close()
+	if err != nil || elementValue != 22 {
+		t.Fatalf("retained list element = %d, %v; want 22", elementValue, err)
+	}
+
+	if captured.evaluated == nil {
+		t.Fatal("primop did not retain its evaluated value")
+	}
+	if got, err := captured.evaluated.Int(); err != nil || got != 42 {
+		t.Fatalf("retained evaluated value = %d, %v; want 42", got, err)
+	}
+}
