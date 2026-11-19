@@ -212,11 +212,17 @@ func (s *Store) ParsePath(ctx *cutil.Context, path string) *StorePath {
 
 // IsValidPath reports whether the path exists in the store.
 func (s *Store) IsValidPath(ctx *cutil.Context, path *StorePath) bool {
+	if s == nil || s.ptr == nil || path == nil || path.ptr == nil {
+		return false
+	}
 	return bool(C.nix_store_is_valid_path(ctx.Ptr(), s.ptr, path.ptr))
 }
 
 // RealPath returns the physical location of a store path.
 func (s *Store) RealPath(ctx *cutil.Context, path *StorePath) (string, cutil.Err) {
+	if s == nil || s.ptr == nil || path == nil || path.ptr == nil {
+		return "", cutil.ErrUnknown
+	}
 	return stringViaCB(ctx, func(cb C.nix_get_string_callback, ud unsafe.Pointer) C.nix_err {
 		return C.nix_store_real_path(ctx.Ptr(), s.ptr, path.ptr, cb, ud)
 	})
@@ -251,11 +257,17 @@ func (s *Store) Realise(ctx *cutil.Context, path *StorePath, cb func(outname str
 
 // CopyClosure copies the closure of path from src to dst.
 func CopyClosure(ctx *cutil.Context, src, dst *Store, path *StorePath) cutil.Err {
+	if src == nil || src.ptr == nil || dst == nil || dst.ptr == nil || path == nil || path.ptr == nil {
+		return cutil.ErrUnknown
+	}
 	return cutil.FromCErr(C.nix_store_copy_closure(ctx.Ptr(), src.ptr, dst.ptr, path.ptr))
 }
 
 // CopyPath copies a single path between stores.
 func CopyPath(ctx *cutil.Context, src, dst *Store, path *StorePath, repair, checkSigs bool) cutil.Err {
+	if src == nil || src.ptr == nil || dst == nil || dst.ptr == nil || path == nil || path.ptr == nil {
+		return cutil.ErrUnknown
+	}
 	return cutil.FromCErr(C.nix_store_copy_path(ctx.Ptr(), src.ptr, dst.ptr, path.ptr, C.bool(repair), C.bool(checkSigs)))
 }
 
@@ -274,6 +286,9 @@ func (s *Store) QueryPathFromHashPart(ctx *cutil.Context, hash string) *StorePat
 
 // DrvFromStorePath returns the derivation for a .drv path.
 func (s *Store) DrvFromStorePath(ctx *cutil.Context, path *StorePath) *Derivation {
+	if s == nil || s.ptr == nil || path == nil || path.ptr == nil {
+		return nil
+	}
 	p := C.nix_store_drv_from_store_path(ctx.Ptr(), s.ptr, path.ptr)
 	if p == nil {
 		return nil
@@ -298,6 +313,9 @@ func DerivationFromJSON(ctx *cutil.Context, s *Store, json string) *Derivation {
 
 // AddDerivation inserts a derivation into the store, returning its path.
 func (s *Store) AddDerivation(ctx *cutil.Context, d *Derivation) *StorePath {
+	if s == nil || s.ptr == nil || d == nil || d.ptr == nil {
+		return nil
+	}
 	p := C.nix_add_derivation(ctx.Ptr(), s.ptr, d.ptr)
 	if p == nil {
 		return nil
@@ -358,6 +376,9 @@ func (p *StorePath) Clone() *StorePath {
 
 // Name returns the path name component.
 func (p *StorePath) Name() string {
+	if p == nil || p.ptr == nil {
+		return ""
+	}
 	var out string
 	ud := cutil.RegisterStringSlot(&out)
 	defer cutil.TakeStringSlot(ud)
@@ -367,6 +388,9 @@ func (p *StorePath) Name() string {
 
 // Hash returns the 20-byte hash part.
 func (p *StorePath) Hash(ctx *cutil.Context) ([20]byte, cutil.Err) {
+	if p == nil || p.ptr == nil {
+		return [20]byte{}, cutil.ErrUnknown
+	}
 	var hp C.nix_store_path_hash_part
 	err := cutil.FromCErr(C.nix_store_path_hash(ctx.Ptr(), p.ptr, &hp))
 	var out [20]byte
@@ -430,6 +454,9 @@ func (d *Derivation) Clone() *Derivation {
 }
 
 func (d *Derivation) ToJSON(ctx *cutil.Context) (string, cutil.Err) {
+	if d == nil || d.ptr == nil {
+		return "", cutil.ErrUnknown
+	}
 	return stringViaCB(ctx, func(cb C.nix_get_string_callback, ud unsafe.Pointer) C.nix_err {
 		return C.nix_derivation_to_json(ctx.Ptr(), d.ptr, cb, ud)
 	})
