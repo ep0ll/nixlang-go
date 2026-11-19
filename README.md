@@ -117,7 +117,7 @@ isPath, err := b.IsPath(builtins.Path("./src"))
 fnValue, err := state.EvalString("x: x + 1", ".")
 fn, err := builtins.NewFunction(fnValue)
 defer fn.Close()
-mapped, err := b.Map(fn, []int{1, 2, 3})
+mapped, err := b.Map(fn, []any{1, 2, 3})
 ```
 
 Supported Go arguments include `nil`, booleans, signed and unsigned integers
@@ -144,7 +144,8 @@ Nix argument has a clear shape: strings use `string`, integer operands use
 attribute sets use named Go structs such as `PathArgs`, `FetchClosureArgs`,
 `ConvertHashArgs`, `DerivationAttrs`, and `FlakeRefAttrs`. Lists with a
 known element type use typed slices, for example `[]string` and
-`[]SearchPathEntry`. A parameter is `any` only when Nix itself accepts
+`[]SearchPathEntry`. Lists with arbitrary Nix values use `[]any` (and
+nested lists use `[][]any`) rather than accepting a scalar `any` parameter. A parameter is `any` only when Nix itself accepts
 multiple distinct Nix value types or an arbitrary expression value (for
 example, `HashFile(algorithm string, path any)` accepts either a Nix path or a
 string path).
