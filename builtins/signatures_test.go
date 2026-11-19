@@ -19,6 +19,8 @@ var (
 	_ func(*builtins.Builtins, builtins.Function, []any) (*value.Value, error) = (*builtins.Builtins).Map
 	_ func(*builtins.Builtins, string, []any) (*value.Value, error) = (*builtins.Builtins).ConcatStringsSep
 	_ func(*builtins.Builtins, any, any) (*value.Value, error) = (*builtins.Builtins).AddErrorContext
+	_ func(*builtins.Builtins, any) (*value.Value, error) = (*builtins.Builtins).Abort
+	_ func(*builtins.Builtins, any) (*value.Value, error) = (*builtins.Builtins).Throw
 	_ func(*builtins.Builtins, string, any) (*value.Value, error) = (*builtins.Builtins).Warn
 	_ func(*builtins.Builtins, builtins.ConvertHashArgs) (*value.Value, error) = (*builtins.Builtins).ConvertHash
 	_ func(*builtins.Builtins, builtins.FetchClosureArgs) (*value.Value, error) = (*builtins.Builtins).FetchClosure
