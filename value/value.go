@@ -423,7 +423,7 @@ func (v *Value) SetList(elems []*Value) error {
 		if elem == nil || elem.c == nil || elem.c.Ptr() == nil {
 			return fmt.Errorf("nix: list element %d is nil or closed", i)
 		}
-		if elem.state != v.state {
+		if elem.state == nil || !elem.state.Same(v.state) {
 			return fmt.Errorf("nix: list element %d belongs to a different evaluator state", i)
 		}
 	}
@@ -482,7 +482,7 @@ func NewList(ctx *util.Context, state *cexpr.EvalState, elems []*Value) (*Value,
 		if elem == nil || elem.c == nil || elem.c.Ptr() == nil {
 			return nil, fmt.Errorf("nix: list element %d is nil or closed", i)
 		}
-		if elem.state != state {
+		if elem.state == nil || !elem.state.Same(state) {
 			return nil, fmt.Errorf("nix: list element %d belongs to a different evaluator state", i)
 		}
 	}
