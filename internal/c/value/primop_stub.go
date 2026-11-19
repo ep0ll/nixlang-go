@@ -5,10 +5,11 @@ package value
 import (
 	"unsafe"
 
+	cexpr "github.com/ep0ll/nixlang-go/internal/c/expr"
 	cutil "github.com/ep0ll/nixlang-go/internal/c/util"
 )
 
-type PrimOpFunc func(userData any, ctx *cutil.Context, state interface{}, args []*Value, result *Value)
+type PrimOpFunc func(userData any, ctx *cutil.Context, state *cexpr.EvalState, args []*Value, result *Value)
 
 func AllocPrimOp(ctx *cutil.Context, fn PrimOpFunc, arity int, name string, argNames []string, doc string, userData any) *PrimOp {
 	return nil
