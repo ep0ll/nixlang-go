@@ -493,8 +493,8 @@ func (b *Builtins) ToPath(arg1 any) (*value.Value, error) {
     return b.Call("toPath", arg1)
 }
 
-// function toString() { [native code] } calls builtins.toString with 1 Go argument.
-func (b *Builtins) function toString() { [native code] }(arg1 any) (*value.Value, error) {
+// ToString calls builtins.toString with 1 Go argument.
+func (b *Builtins) ToString(arg1 any) (*value.Value, error) {
     return b.Call("toString", arg1)
 }
 
