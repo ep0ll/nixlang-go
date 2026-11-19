@@ -51,7 +51,11 @@ func cgoNixPrimOpCB(userdata unsafe.Pointer, context *C.nix_c_context, state *C.
 	resultValue := WrapBorrowedPtr(unsafe.Pointer(result))
 	defer resultValue.Decref()
 
-	stateView := cexpr.WrapState(unsafe.Pointer(state))
+	stateView := cexpr.CloneCallbackState(unsafe.Pointer(state))
+	if stateView == nil {
+		callbackFailure(ctx, "failed to retain the evaluator state for the primop callback")
+		return
+	}
 
 	callback.fn(
 		callback.userData,
