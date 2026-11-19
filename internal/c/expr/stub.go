@@ -30,6 +30,7 @@ func (b *Builder) Ptr() unsafe.Pointer                 { return nil }
 func Create(ctx *cutil.Context, lookupPath []string, store *cstore.Store) *EvalState {
 	return &EvalState{}
 }
+func WrapState(unsafe.Pointer) *EvalState { return &EvalState{} }
 func (s *EvalState) Free()               {}
 func (s *EvalState) Ptr() unsafe.Pointer { return nil }
 
