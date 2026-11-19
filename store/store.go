@@ -73,6 +73,9 @@ func (s *Store) Internal() *cstore.Store {
 
 // URI returns the store URI.
 func (s *Store) URI() (string, error) {
+	if s == nil || s.c == nil || s.ctx == nil {
+		return "", fmt.Errorf("nix: store is closed")
+	}
 	v, code := s.c.GetURI(s.ctx.Internal())
 	if err := s.ctx.Check(util.ErrorCode(code)); err != nil {
 		return "", err
@@ -82,6 +85,9 @@ func (s *Store) URI() (string, error) {
 
 // StoreDir returns the logical store directory (e.g. /nix/store).
 func (s *Store) StoreDir() (string, error) {
+	if s == nil || s.c == nil || s.ctx == nil {
+		return "", fmt.Errorf("nix: store is closed")
+	}
 	v, code := s.c.GetStoreDir(s.ctx.Internal())
 	if err := s.ctx.Check(util.ErrorCode(code)); err != nil {
 		return "", err
@@ -91,6 +97,9 @@ func (s *Store) StoreDir() (string, error) {
 
 // Version returns the store protocol/version string.
 func (s *Store) Version() (string, error) {
+	if s == nil || s.c == nil || s.ctx == nil {
+		return "", fmt.Errorf("nix: store is closed")
+	}
 	v, code := s.c.GetVersion(s.ctx.Internal())
 	if err := s.ctx.Check(util.ErrorCode(code)); err != nil {
 		return "", err
@@ -100,6 +109,9 @@ func (s *Store) Version() (string, error) {
 
 // ParsePath parses a full store path string into a Path.
 func (s *Store) ParsePath(path string) (*Path, error) {
+	if s == nil || s.c == nil || s.ctx == nil {
+		return nil, fmt.Errorf("nix: store is closed")
+	}
 	p := s.c.ParsePath(s.ctx.Internal(), path)
 	if p == nil {
 		if err := s.ctx.Err(); err != nil {
@@ -120,6 +132,9 @@ func (s *Store) IsValid(path *Path) bool {
 
 // RealPath returns the physical filesystem location of a store path.
 func (s *Store) RealPath(path *Path) (string, error) {
+	if s == nil || s.c == nil || s.ctx == nil || path == nil || path.c == nil {
+		return "", fmt.Errorf("nix: store and path are required")
+	}
 	v, code := s.c.RealPath(s.ctx.Internal(), path.c)
 	if err := s.ctx.Check(util.ErrorCode(code)); err != nil {
 		return "", err
@@ -151,6 +166,9 @@ func (s *Store) Realise(path *Path, cb func(outname string, out *Path)) error {
 
 // QueryPathFromHashPart looks up a store path by its hash component.
 func (s *Store) QueryPathFromHashPart(hash string) (*Path, error) {
+	if s == nil || s.c == nil || s.ctx == nil {
+		return nil, fmt.Errorf("nix: store is closed")
+	}
 	p := s.c.QueryPathFromHashPart(s.ctx.Internal(), hash)
 	if p == nil {
 		return nil, s.ctx.Err()
@@ -160,6 +178,9 @@ func (s *Store) QueryPathFromHashPart(hash string) (*Path, error) {
 
 // DerivationFromPath returns the derivation object for a .drv store path.
 func (s *Store) DerivationFromPath(path *Path) (*Derivation, error) {
+	if s == nil || s.c == nil || s.ctx == nil || path == nil || path.c == nil {
+		return nil, fmt.Errorf("nix: store and derivation path are required")
+	}
 	d := s.c.DrvFromStorePath(s.ctx.Internal(), path.c)
 	if d == nil {
 		if err := s.ctx.Err(); err != nil {
@@ -172,6 +193,9 @@ func (s *Store) DerivationFromPath(path *Path) (*Derivation, error) {
 
 // DerivationFromJSON creates a derivation from a JSON string.
 func (s *Store) DerivationFromJSON(json string) (*Derivation, error) {
+	if s == nil || s.c == nil || s.ctx == nil {
+		return nil, fmt.Errorf("nix: store is closed")
+	}
 	d := cstore.DerivationFromJSON(s.ctx.Internal(), s.c, json)
 	if d == nil {
 		if err := s.ctx.Err(); err != nil {
@@ -184,6 +208,9 @@ func (s *Store) DerivationFromJSON(json string) (*Derivation, error) {
 
 // AddDerivation inserts a derivation into the store.
 func (s *Store) AddDerivation(d *Derivation) (*Path, error) {
+	if s == nil || s.c == nil || s.ctx == nil || d == nil || d.c == nil {
+		return nil, fmt.Errorf("nix: store and derivation are required")
+	}
 	p := s.c.AddDerivation(s.ctx.Internal(), d.c)
 	if p == nil {
 		if err := s.ctx.Err(); err != nil {
@@ -233,6 +260,9 @@ func (p *Path) String() string {
 
 // Hash returns the 20-byte hash part of the store path.
 func (p *Path) Hash(ctx *util.Context) ([20]byte, error) {
+	if p == nil || p.c == nil || ctx == nil {
+		return [20]byte{}, fmt.Errorf("nix: path and context are required")
+	}
 	h, code := p.c.Hash(ctx.Internal())
 	if err := ctx.Check(util.ErrorCode(code)); err != nil {
 		return [20]byte{}, err
@@ -275,6 +305,9 @@ func (d *Derivation) Close() {
 
 // ToJSON serializes the derivation to JSON.
 func (d *Derivation) ToJSON(ctx *util.Context) (string, error) {
+	if d == nil || d.c == nil || ctx == nil {
+		return "", fmt.Errorf("nix: derivation and context are required")
+	}
 	s, code := d.c.ToJSON(ctx.Internal())
 	if err := ctx.Check(util.ErrorCode(code)); err != nil {
 		return "", err
@@ -284,6 +317,9 @@ func (d *Derivation) ToJSON(ctx *util.Context) (string, error) {
 
 // Clone returns an independent copy.
 func (d *Derivation) Clone() *Derivation {
+	if d == nil || d.c == nil {
+		return nil
+	}
 	c := d.c.Clone()
 	if c == nil {
 		return nil
@@ -293,10 +329,16 @@ func (d *Derivation) Clone() *Derivation {
 
 // CopyClosure copies the closure of path from src to dst.
 func CopyClosure(ctx *util.Context, src, dst *Store, path *Path) error {
+	if ctx == nil || src == nil || src.c == nil || dst == nil || dst.c == nil || path == nil || path.c == nil {
+		return fmt.Errorf("nix: context, source store, destination store and path are required")
+	}
 	return ctx.Check(util.ErrorCode(cstore.CopyClosure(ctx.Internal(), src.c, dst.c, path.c)))
 }
 
 // CopyPath copies a single path between stores.
 func CopyPath(ctx *util.Context, src, dst *Store, path *Path, repair, checkSigs bool) error {
+	if ctx == nil || src == nil || src.c == nil || dst == nil || dst.c == nil || path == nil || path.c == nil {
+		return fmt.Errorf("nix: context, source store, destination store and path are required")
+	}
 	return ctx.Check(util.ErrorCode(cstore.CopyPath(ctx.Internal(), src.c, dst.c, path.c, repair, checkSigs)))
 }
