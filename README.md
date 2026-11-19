@@ -82,3 +82,61 @@ Close contexts, stores, states, values, descriptors, and other owned handles whe
 ## License
 
 LGPL-2.1-or-later (aligned with Nix).
+
+## Nix expression builtins from Go
+
+The `builtins` package exposes the Nix 2.35.6 evaluator builtin set through
+ordinary Go APIs. It does not reimplement Nix builtin semantics: calls are
+dispatched to the active Nix evaluator through the generic C API value-call
+interface. You pass Go values, and the package converts them into evaluator
+values before calling the actual builtin.
+
+```go
+b, err := builtins.New(state)
+if err != nil {
+    return err
+}
+defer b.Close()
+
+// Generated, arity-specific Go wrapper.
+sum, err := b.Add(20, 22)
+if err != nil {
+    return err
+}
+defer sum.Close()
+n, err := sum.Int() // 42
+
+// Go slices and maps become Nix lists and attribute sets.
+joined, err := b.CallString("concatStringsSep", "/", []string{"usr", "local", "bin"})
+answer, err := b.GetAttr("answer", map[string]any{"answer": 42})
+
+// Use builtins.Path when a Go string must be a Nix path, rather than a string.
+isPath, err := b.IsPath(builtins.Path("./src"))
+
+// Existing Nix closures can be passed as function arguments.
+fn, err := state.EvalString("x: x + 1", ".")
+mapped, err := b.Map(fn, []int{1, 2, 3})
+```
+
+Supported Go arguments include `nil`, booleans, signed and unsigned integers
+(fitting Nix's signed 64-bit integer range), floats, strings, `builtins.Path`,
+slices and arrays, string-keyed maps, and `*value.Value` handles from the same
+evaluator state. `[]byte` is treated as a Nix string. Function parameters are
+passed as existing Nix function values (for example, values returned by
+`expr.State.EvalString`). Results are returned as `*value.Value` so Nix types,
+attribute sets, lists, and store-path string context are not silently flattened.
+
+Use `b.Get(name)` for constants such as `currentTime`, `currentSystem`,
+`nixVersion`, `storeDir`, `langVersion`, and `nixPath`; `b.Names()` and
+`b.Has(name)` inspect the builtin set provided by the running evaluator.
+`builtins.Registry()` describes the Nix 2.35.6 callable catalog, including
+arity and experimental-feature gates. Runtime availability can differ when a
+builtin is feature-gated, platform-dependent, or when the linked Nix version
+differs from 2.35.6.
+
+The catalog includes core `libexpr` primops, string-context and fetcher
+primops, and the three flake primops (`getFlake`, `parseFlakeRef`, and
+`flakeRefToString`). Flake primops are only available when flake settings
+have been added to the evaluator. The optional `importNative` and `exec`
+primops require Nix's native-code setting and are not available on Windows.
+The internal `fetchFinalTree` primop is deliberately not exposed.
