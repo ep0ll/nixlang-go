@@ -143,6 +143,7 @@ func SettingGet(ctx *Context, key string) (string, Err) {
 	defer C.free(unsafe.Pointer(ckey))
 	var out string
 	ud := RegisterStringSlot(&out)
+	defer TakeStringSlot(ud)
 	err := Err(C.nix_setting_get(ctx.Ptr(), ckey, C.nix_get_string_callback(C.cgoUtilStringCB), ud))
 	return out, err
 }
