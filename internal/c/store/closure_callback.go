@@ -7,11 +7,27 @@ package store
 #include "bridge.h"
 */
 import "C"
-import "unsafe"
+import (
+	"fmt"
+	"unsafe"
+
+	cutil "github.com/ep0ll/nixlang-go/internal/c/util"
+)
 
 //export cgoStoreFSClosureCB
-func cgoStoreFSClosureCB(_ *C.nix_c_context, userdata unsafe.Pointer, borrowed *C.StorePath) {
-	defer func() { _ = recover() }()
+func cgoStoreFSClosureCB(context *C.nix_c_context, userdata unsafe.Pointer, borrowed *C.StorePath) {
+	ctx := cutil.WrapBorrowedContext(unsafe.Pointer(context))
+	var path *StorePath
+	transferred := false
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			if !transferred && path != nil {
+				path.Free()
+			}
+			_ = ctx.SetErr(cutil.ErrUnknown, fmt.Sprintf("panic in filesystem-closure callback: %v", recovered))
+		}
+	}()
+
 	if userdata == nil || borrowed == nil {
 		return
 	}
@@ -21,7 +37,10 @@ func cgoStoreFSClosureCB(_ *C.nix_c_context, userdata unsafe.Pointer, borrowed *
 	}
 	owned := C.nix_store_path_clone(borrowed)
 	if owned == nil {
+		_ = ctx.SetErr(cutil.ErrUnknown, "nix: failed to clone a filesystem-closure path")
 		return
 	}
-	cb(wrapOwnedStorePath(owned))
+	path = wrapOwnedStorePath(owned)
+	cb(path)
+	transferred = true
 }
