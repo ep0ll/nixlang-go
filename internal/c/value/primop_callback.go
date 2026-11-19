@@ -5,9 +5,11 @@ package value
 #include <nix_api_value.h>
 #include <nix_api_expr.h>
 #include <nix_api_util.h>
+#include "primop_bridge.h"
 */
 import "C"
 import (
+	"runtime/cgo"
 	"unsafe"
 
 	cexpr "github.com/ep0ll/nixlang-go/internal/c/expr"
@@ -26,9 +28,10 @@ func cgoNixPrimOpCB(userdata unsafe.Pointer, context *C.nix_c_context, state *C.
 		callbackFailure(ctx, "missing primop callback handle")
 		return
 	}
-	callback := primOpCallbackFor(uintptr(userdata))
-	if callback == nil {
-		callbackFailure(ctx, "unknown or released primop callback handle")
+	handle := cgo.Handle(uintptr(C.nixgo_primop_handle_from_ptr(userdata)))
+	callback, ok := handle.Value().(*primOpCallback)
+	if !ok || callback == nil {
+		callbackFailure(ctx, "unknown primop callback handle")
 		return
 	}
 
