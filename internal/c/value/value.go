@@ -39,8 +39,9 @@ const (
 // Value wraps a GC-managed nix_value.
 // Decref is idempotent; always call Close/Decref explicitly — finalizers are a backup only.
 type Value struct {
-	ptr  *C.nix_value
-	once sync.Once
+	ptr    *C.nix_value
+	once   sync.Once
+	owned  bool
 }
 
 // ListBuilder wraps ListBuilder.
@@ -64,9 +65,16 @@ func WrapPtr(p unsafe.Pointer) *Value {
 	if p == nil {
 		return nil
 	}
-	v := &Value{ptr: (*C.nix_value)(p)}
+	v := &Value{ptr: (*C.nix_value)(p), owned: true}
 	runtime.SetFinalizer(v, func(v *Value) { v.Decref() })
 	return v
+}
+
+// WrapBorrowedPtr wraps a nix_value whose lifetime is owned by the caller.
+// The wrapper never decrements the Nix reference when Decref is called.
+func WrapBorrowedPtr(p unsafe.Pointer) *Value {
+	if p == nil { return nil }
+	return &Value{ptr: (*C.nix_value)(p)}
 }
 
 // Alloc allocates a new value bound to state.
@@ -106,7 +114,7 @@ func (v *Value) Decref() {
 	}
 	v.once.Do(func() {
 		if v.ptr != nil {
-			C.nix_value_decref(nil, v.ptr)
+			if v.owned { C.nix_value_decref(nil, v.ptr) }
 			v.ptr = nil
 		}
 		runtime.SetFinalizer(v, nil)
@@ -212,6 +220,25 @@ func (v *Value) AttrNameByIdx(ctx *cutil.Context, state *cexpr.EvalState, idx ui
 		return ""
 	}
 	return C.GoString(p)
+}
+
+// GetExternal returns a borrowed ExternalValue pointer. It remains valid only
+// while this Value remains alive; use expr.GCIncref/GCDecref to retain it.
+func (v *Value) GetExternal(ctx *cutil.Context) unsafe.Pointer {
+	p := C.nix_get_external(ctx.Ptr(), v.ptr)
+	return unsafe.Pointer(p)
+}
+
+// InitExternal initializes this value from an ExternalValue pointer.
+func (v *Value) InitExternal(ctx *cutil.Context, external unsafe.Pointer) cutil.Err {
+	return cutil.FromCErr(C.nix_init_external(ctx.Ptr(), v.ptr, (*C.ExternalValue)(external)))
+}
+
+// Retain creates an independently-owned reference to this value.
+func (v *Value) Retain(ctx *cutil.Context) (*Value, cutil.Err) {
+	if v == nil || v.ptr == nil { return nil, cutil.ErrUnknown }
+	if err := C.nix_value_incref(ctx.Ptr(), v.ptr); err != C.NIX_OK { return nil, cutil.FromCErr(err) }
+	return WrapPtr(unsafe.Pointer(v.ptr)), cutil.OK
 }
 
 // InitNull initializes to null.
