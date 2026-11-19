@@ -325,7 +325,7 @@ func (v *Value) Attrs() (map[string]*Value, error) {
 }
 
 func (v *Value) ensureOpen() error {
-	if v == nil || v.c == nil {
+	if v == nil || v.c == nil || v.c.Ptr() == nil {
 		return fmt.Errorf("nix: value is closed")
 	}
 	if v.ctx == nil || v.state == nil {
