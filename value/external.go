@@ -12,8 +12,8 @@ func (v *Value) SetExternal(externalValue *external.Value) error {
 	if err := v.ensureOpen(); err != nil {
 		return err
 	}
-	if externalValue == nil {
-		return fmt.Errorf("nix: external value is required")
+	if externalValue == nil || externalValue.Pointer() == nil {
+		return fmt.Errorf("nix: open external value is required")
 	}
 	return v.ctx.Check(util.ErrorCode(v.c.InitExternal(v.ctx.Internal(), externalValue.Pointer())))
 }
