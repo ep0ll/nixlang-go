@@ -15,15 +15,21 @@ func cgoExprGCFinalizer(obj unsafe.Pointer, userdata unsafe.Pointer) {
 	if userdata == nil {
 		return
 	}
-	id := uintptr(C.nixgo_expr_userdata_take_id(userdata))
+	tokenID := uintptr(userdata)
 	gcFinalizerMu.Lock()
-	fn := gcFinalizers[id]
-	delete(gcFinalizers, id)
-	objectID := uintptr(obj)
-	if gcFinalizerObjects[objectID] == id {
-		delete(gcFinalizerObjects, objectID)
+	fn, ok := gcFinalizers[tokenID]
+	if ok {
+		delete(gcFinalizers, tokenID)
+		objectID := uintptr(obj)
+		if gcFinalizerObjects[objectID] == tokenID {
+			delete(gcFinalizerObjects, objectID)
+		}
 	}
 	gcFinalizerMu.Unlock()
+	if !ok {
+		return
+	}
+	C.nixgo_expr_userdata_free(userdata)
 	if fn != nil {
 		fn(obj)
 	}
