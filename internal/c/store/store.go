@@ -68,9 +68,14 @@ func Open(ctx *cutil.Context, uri string, params map[string]string) *Store {
 	}
 
 	var cparams ***C.char
-	var freeParams func()
 	if len(params) > 0 {
-		cparams, freeParams = encodeStoreParams(params)
+		var freeParams func()
+		var ok bool
+		cparams, freeParams, ok = encodeStoreParams(params)
+		if !ok {
+			_ = ctx.SetErr(cutil.ErrUnknown, "nix: failed to allocate store parameters")
+			return nil
+		}
 		defer freeParams()
 	}
 
@@ -86,37 +91,59 @@ func Open(ctx *cutil.Context, uri string, params map[string]string) *Store {
 // encodeStoreParams builds a null-terminated array of {key, value} pairs for
 // nix_store_open. C walks params[i] until NULL; each params[i] is char** with
 // [0]=key and [1]=value (see nix_api_store.cc on Nix master).
-func encodeStoreParams(params map[string]string) (***C.char, func()) {
+func encodeStoreParams(params map[string]string) (***C.char, func(), bool) {
 	n := len(params)
 	if n == 0 {
-		return nil, func() {}
+		return nil, func() {}, true
 	}
 
-	type kv struct{ key, val *C.char }
-	kvs := make([]kv, 0, n)
-	for k, v := range params {
-		kvs = append(kvs, kv{C.CString(k), C.CString(v)})
-	}
-
-	pairStorage := make([][2]*C.char, n)
-	cPairs := make([]**C.char, n+1)
-	for i, p := range kvs {
-		pairStorage[i][0] = p.key
-		pairStorage[i][1] = p.val
-		cPairs[i] = &pairStorage[i][0]
-	}
-	cPairs[n] = nil
-
-	root := (***C.char)(unsafe.Pointer(&cPairs[0]))
-	free := func() {
-		for _, p := range kvs {
-			C.free(unsafe.Pointer(p.key))
-			C.free(unsafe.Pointer(p.val))
+	ptrSize := unsafe.Sizeof(uintptr(0))
+	outer := C.malloc(C.size_t(uintptr(n+1) * ptrSize))
+	pairs := C.malloc(C.size_t(uintptr(n*2) * ptrSize))
+	if outer == nil || pairs == nil {
+		if outer != nil {
+			C.free(outer)
 		}
-		runtime.KeepAlive(pairStorage)
-		runtime.KeepAlive(cPairs)
+		if pairs != nil {
+			C.free(pairs)
+		}
+		return nil, func() {}, false
 	}
-	return root, free
+
+	outerSlice := unsafe.Slice((***C.char)(outer), n+1)
+	pairSlice := unsafe.Slice((**C.char)(pairs), n*2)
+	allocated := make([]*C.char, 0, n*2)
+	cleanup := func() {
+		for _, value := range allocated {
+			C.free(unsafe.Pointer(value))
+		}
+		C.free(pairs)
+		C.free(outer)
+	}
+
+	i := 0
+	for key, value := range params {
+		ckey := C.CString(key)
+		cvalue := C.CString(value)
+		if ckey == nil || cvalue == nil {
+			if ckey != nil {
+				C.free(unsafe.Pointer(ckey))
+			}
+			if cvalue != nil {
+				C.free(unsafe.Pointer(cvalue))
+			}
+			cleanup()
+			return nil, func() {}, false
+		}
+		allocated = append(allocated, ckey, cvalue)
+		pairSlice[2*i] = ckey
+		pairSlice[2*i+1] = cvalue
+		outerSlice[i] = (**C.char)(unsafe.Add(pairs, uintptr(2*i)*ptrSize))
+		i++
+	}
+	outerSlice[n] = nil
+
+	return (***C.char)(outer), cleanup, true
 }
 
 // Free releases the store. Idempotent; safe with concurrent finalizer.
