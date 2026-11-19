@@ -32,11 +32,17 @@ type Builder struct {
 
 // Init initializes libexpr. Call after util.Init and store.Init.
 func Init(ctx *util.Context) error {
+	if ctx == nil {
+		return fmt.Errorf("nix: context is required")
+	}
 	return ctx.Check(util.ErrorCode(cexpr.Init(ctx.Internal())))
 }
 
 // NewBuilder creates a builder for a customized evaluator.
 func NewBuilder(ctx *util.Context, st *store.Store) (*Builder, error) {
+	if ctx == nil || st == nil || st.Internal() == nil {
+		return nil, fmt.Errorf("nix: context and open store are required")
+	}
 	b := cexpr.NewBuilder(ctx.Internal(), st.Internal())
 	if b == nil {
 		if err := ctx.Err(); err != nil {
@@ -49,26 +55,41 @@ func NewBuilder(ctx *util.Context, st *store.Store) (*Builder, error) {
 
 // LoadEnvironment loads settings from the ambient environment and config files.
 func (b *Builder) LoadEnvironment() error {
+	if b == nil || b.c == nil || b.ctx == nil {
+		return fmt.Errorf("nix: evaluator builder is closed")
+	}
 	return b.ctx.Check(util.ErrorCode(b.c.Load(b.ctx.Internal())))
 }
 
 // SetLookupPath sets paths used for <...> lookups (like NIX_PATH).
 func (b *Builder) SetLookupPath(paths []string) error {
+	if b == nil || b.c == nil || b.ctx == nil {
+		return fmt.Errorf("nix: evaluator builder is closed")
+	}
 	return b.ctx.Check(util.ErrorCode(b.c.SetLookupPath(b.ctx.Internal(), paths)))
 }
 
 // SetSetting sets an evaluator setting (e.g. "pure-eval").
 func (b *Builder) SetSetting(key, value string) error {
+	if b == nil || b.c == nil || b.ctx == nil {
+		return fmt.Errorf("nix: evaluator builder is closed")
+	}
 	return b.ctx.Check(util.ErrorCode(b.c.SetSetting(b.ctx.Internal(), key, value)))
 }
 
 // Internal returns the low-level builder (for flake integration).
 func (b *Builder) Internal() *cexpr.Builder {
+	if b == nil {
+		return nil
+	}
 	return b.c
 }
 
 // Build creates the EvalState. Call Close on the builder after Build.
 func (b *Builder) Build() (*State, error) {
+	if b == nil || b.c == nil || b.ctx == nil {
+		return nil, fmt.Errorf("nix: evaluator builder is closed")
+	}
 	s := b.c.Build(b.ctx.Internal())
 	if s == nil {
 		if err := b.ctx.Err(); err != nil {
@@ -89,6 +110,9 @@ func (b *Builder) Close() {
 
 // NewState creates an evaluator with optional lookup path.
 func NewState(ctx *util.Context, st *store.Store, lookupPath []string) (*State, error) {
+	if ctx == nil || st == nil || st.Internal() == nil {
+		return nil, fmt.Errorf("nix: context and open store are required")
+	}
 	s := cexpr.Create(ctx.Internal(), lookupPath, st.Internal())
 	if s == nil {
 		if err := ctx.Err(); err != nil {
@@ -117,6 +141,9 @@ func (s *State) Internal() *cexpr.EvalState {
 
 // AllocValue allocates an uninitialized value bound to this state.
 func (s *State) AllocValue() (*value.Value, error) {
+	if s == nil || s.c == nil || s.ctx == nil {
+		return nil, fmt.Errorf("nix: evaluator state is closed")
+	}
 	cv := cvalue.Alloc(s.ctx.Internal(), s.c)
 	if cv == nil {
 		if err := s.ctx.Err(); err != nil {
@@ -131,6 +158,9 @@ func (s *State) AllocValue() (*value.Value, error) {
 // path is the logical file path used to resolve relative paths (use "." if N/A).
 // This only evaluates; it does not build or run any Nix CLI command.
 func (s *State) EvalString(exprStr, path string) (*value.Value, error) {
+	if s == nil || s.c == nil || s.ctx == nil {
+		return nil, fmt.Errorf("nix: evaluator state is closed")
+	}
 	v, err := s.AllocValue()
 	if err != nil {
 		return nil, err
@@ -160,6 +190,11 @@ func (s *State) EvalFile(path string) (*value.Value, error) {
 
 // Call applies a Nix function to a single argument.
 func (s *State) Call(fn, arg *value.Value) (*value.Value, error) {
+	if s == nil || s.c == nil || s.ctx == nil || fn == nil || arg == nil ||
+		fn.Internal() == nil || arg.Internal() == nil ||
+		fn.Internal().Ptr() == nil || arg.Internal().Ptr() == nil {
+		return nil, fmt.Errorf("nix: evaluator state, function and argument are required")
+	}
 	out, err := s.AllocValue()
 	if err != nil {
 		return nil, err
@@ -178,6 +213,14 @@ func (s *State) Call(fn, arg *value.Value) (*value.Value, error) {
 
 // CallMulti applies a curried function to multiple arguments.
 func (s *State) CallMulti(fn *value.Value, args ...*value.Value) (*value.Value, error) {
+	if s == nil || s.c == nil || s.ctx == nil || fn == nil || fn.Internal() == nil || fn.Internal().Ptr() == nil {
+		return nil, fmt.Errorf("nix: evaluator state and function are required")
+	}
+	for i, arg := range args {
+		if arg == nil || arg.Internal() == nil || arg.Internal().Ptr() == nil {
+			return nil, fmt.Errorf("nix: call argument %d is nil or closed", i)
+		}
+	}
 	out, err := s.AllocValue()
 	if err != nil {
 		return nil, err
@@ -200,5 +243,8 @@ func (s *State) CallMulti(fn *value.Value, args ...*value.Value) (*value.Value, 
 
 // Store returns the store associated with this state.
 func (s *State) Store() *store.Store {
+	if s == nil {
+		return nil
+	}
 	return s.st
 }
