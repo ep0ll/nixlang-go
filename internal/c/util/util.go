@@ -170,7 +170,7 @@ func SetVerbosity(ctx *Context, level Verbosity) Err {
 
 var (
 	strMu    sync.Mutex
-	strSlots         = make(map[uintptr]*string)
+	strSlots         = make(map[unsafe.Pointer]*string)
 	strNext  uintptr = 1
 )
 
@@ -184,7 +184,7 @@ func RegisterStringSlot(s *string) unsafe.Pointer {
 	if token == nil {
 		return nil
 	}
-	strSlots[uintptr(token)] = s
+	strSlots[token] = s
 	return token
 }
 
@@ -196,10 +196,9 @@ func TakeStringSlot(p unsafe.Pointer) *string {
 	}
 	strMu.Lock()
 	defer strMu.Unlock()
-	key := uintptr(p)
-	s, ok := strSlots[key]
+	s, ok := strSlots[p]
 	if ok {
-		delete(strSlots, key)
+		delete(strSlots, p)
 		C.nixgo_util_userdata_free(p)
 	}
 	return s
