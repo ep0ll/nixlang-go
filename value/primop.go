@@ -11,10 +11,12 @@ import (
 	"github.com/ep0ll/nixlang-go/util"
 )
 
-// PrimOpFunc implements a Nix builtin. The state pointer and argument values
-// are borrowed for the duration of the callback. Call Retain on any argument
-// that must outlive the callback. Return an error to raise a Nix evaluation
-// error; a *util.NixError preserves its error code.
+// PrimOpFunc implements a Nix builtin. PrimOpState, args, and result are
+// callback-scoped. Call Retain on an argument that must outlive the callback;
+// values allocated through PrimOpState own independent error contexts. All
+// such values still depend on the originating expr.State remaining open.
+// Return an error to raise a Nix evaluation error; a *util.NixError preserves
+// its error code.
 type PrimOpFunc func(
 	userData any,
 	ctx *util.Context,
