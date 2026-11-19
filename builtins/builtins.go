@@ -189,6 +189,17 @@ func (b *Builtins) CallString(name string, args ...any) (string, error) {
 }
 
 func (b *Builtins) fromGo(input any) (*value.Value, bool, error) {
+	if function, ok := input.(Function); ok {
+		fn := function.value
+		if fn == nil || fn.Internal() == nil || fn.Internal().Ptr() == nil {
+			return nil, false, fmt.Errorf("function argument is nil or closed")
+		}
+		if fn.StateInternal() == nil || b.state.Internal() == nil ||
+			!fn.StateInternal().Same(b.state.Internal()) {
+			return nil, false, fmt.Errorf("function belongs to a different evaluator state")
+		}
+		return fn, false, nil
+	}
 	if convertible, ok := input.(AttrConvertible); ok {
 		rv := reflect.ValueOf(input)
 		if rv.Kind() == reflect.Ptr && rv.IsNil() {
