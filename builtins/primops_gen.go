@@ -29,12 +29,12 @@ func (b *Builtins) Throw(message string) (*value.Value, error) {
 }
 
 // All calls builtins.all.
-func (b *Builtins) All(predicate Function, list any) (*value.Value, error) {
+func (b *Builtins) All(predicate Function, list []any) (*value.Value, error) {
 	return b.Call("all", predicate, list)
 }
 
 // Any calls builtins.any.
-func (b *Builtins) Any(predicate Function, list any) (*value.Value, error) {
+func (b *Builtins) Any(predicate Function, list []any) (*value.Value, error) {
 	return b.Call("any", predicate, list)
 }
 
@@ -94,12 +94,12 @@ func (b *Builtins) CompareVersions(left string, right string) (*value.Value, err
 }
 
 // ConcatLists calls builtins.concatLists.
-func (b *Builtins) ConcatLists(lists any) (*value.Value, error) {
+func (b *Builtins) ConcatLists(lists [][]any) (*value.Value, error) {
 	return b.Call("concatLists", lists)
 }
 
 // ConcatMap calls builtins.concatMap.
-func (b *Builtins) ConcatMap(function Function, list any) (*value.Value, error) {
+func (b *Builtins) ConcatMap(function Function, list []any) (*value.Value, error) {
 	return b.Call("concatMap", function, list)
 }
 
@@ -134,12 +134,12 @@ func (b *Builtins) Div(left any, right any) (*value.Value, error) {
 }
 
 // Elem calls builtins.elem.
-func (b *Builtins) Elem(element any, list any) (*value.Value, error) {
+func (b *Builtins) Elem(element any, list []any) (*value.Value, error) {
 	return b.Call("elem", element, list)
 }
 
 // ElemAt calls builtins.elemAt.
-func (b *Builtins) ElemAt(list any, index int64) (*value.Value, error) {
+func (b *Builtins) ElemAt(list []any, index int64) (*value.Value, error) {
 	return b.Call("elemAt", list, index)
 }
 
@@ -174,7 +174,7 @@ func (b *Builtins) FetchTree(input any) (*value.Value, error) {
 }
 
 // Filter calls builtins.filter.
-func (b *Builtins) Filter(predicate Function, list any) (*value.Value, error) {
+func (b *Builtins) Filter(predicate Function, list []any) (*value.Value, error) {
 	return b.Call("filter", predicate, list)
 }
 
@@ -194,7 +194,7 @@ func (b *Builtins) Floor(number any) (*value.Value, error) {
 }
 
 // FoldlPrime calls builtins.foldl'.
-func (b *Builtins) FoldlPrime(function Function, initial any, list any) (*value.Value, error) {
+func (b *Builtins) FoldlPrime(function Function, initial any, list []any) (*value.Value, error) {
 	return b.Call("foldl'", function, initial, list)
 }
 
@@ -244,7 +244,7 @@ func (b *Builtins) GetFlake(ref any) (*value.Value, error) {
 }
 
 // GroupBy calls builtins.groupBy.
-func (b *Builtins) GroupBy(function Function, list any) (*value.Value, error) {
+func (b *Builtins) GroupBy(function Function, list []any) (*value.Value, error) {
 	return b.Call("groupBy", function, list)
 }
 
@@ -269,7 +269,7 @@ func (b *Builtins) HasContext(input string) (*value.Value, error) {
 }
 
 // Head calls builtins.head.
-func (b *Builtins) Head(list any) (*value.Value, error) {
+func (b *Builtins) Head(list []any) (*value.Value, error) {
 	return b.Call("head", list)
 }
 
@@ -334,7 +334,7 @@ func (b *Builtins) IsString(value any) (*value.Value, error) {
 }
 
 // Length calls builtins.length.
-func (b *Builtins) Length(list any) (*value.Value, error) {
+func (b *Builtins) Length(list []any) (*value.Value, error) {
 	return b.Call("length", list)
 }
 
@@ -349,7 +349,7 @@ func (b *Builtins) ListToAttrs(entries []NameValue) (*value.Value, error) {
 }
 
 // Map calls builtins.map.
-func (b *Builtins) Map(function Function, list any) (*value.Value, error) {
+func (b *Builtins) Map(function Function, list []any) (*value.Value, error) {
 	return b.Call("map", function, list)
 }
 
@@ -384,7 +384,7 @@ func (b *Builtins) ParseFlakeRef(ref string) (*value.Value, error) {
 }
 
 // Partition calls builtins.partition.
-func (b *Builtins) Partition(predicate Function, list any) (*value.Value, error) {
+func (b *Builtins) Partition(predicate Function, list []any) (*value.Value, error) {
 	return b.Call("partition", predicate, list)
 }
 
@@ -439,7 +439,7 @@ func (b *Builtins) Seq(first any, second any) (*value.Value, error) {
 }
 
 // Sort calls builtins.sort.
-func (b *Builtins) Sort(comparator Function, list any) (*value.Value, error) {
+func (b *Builtins) Sort(comparator Function, list []any) (*value.Value, error) {
 	return b.Call("sort", comparator, list)
 }
 
@@ -474,7 +474,7 @@ func (b *Builtins) Substring(start int64, length int64, input string) (*value.Va
 }
 
 // Tail calls builtins.tail.
-func (b *Builtins) Tail(list any) (*value.Value, error) {
+func (b *Builtins) Tail(list []any) (*value.Value, error) {
 	return b.Call("tail", list)
 }
 
