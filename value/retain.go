@@ -10,8 +10,8 @@ import (
 // Use it when keeping a value obtained in a primop callback beyond the
 // callback's lifetime.
 func (v *Value) Retain() (*Value, error) {
-	if v == nil || v.c == nil {
-		return nil, fmt.Errorf("nix: value is closed")
+	if err := v.ensureOpen(); err != nil {
+		return nil, err
 	}
 	retained, code := v.c.Retain(v.ctx.Internal())
 	if err := v.ctx.Check(util.ErrorCode(code)); err != nil {
