@@ -32,8 +32,9 @@ type Store struct {
 // StorePath wraps a store path.
 // Paths passed to realise callbacks are borrowed; Clone before retaining them.
 type StorePath struct {
-	ptr  *C.StorePath
-	once sync.Once
+	ptr   *C.StorePath
+	once  sync.Once
+	owned bool
 }
 
 // Derivation wraps nix_derivation.
@@ -176,7 +177,7 @@ func (s *Store) ParsePath(ctx *cutil.Context, path string) *StorePath {
 	if p == nil {
 		return nil
 	}
-	sp := &StorePath{ptr: p}
+	sp := &StorePath{ptr: p, owned: true}
 	runtime.SetFinalizer(sp, func(sp *StorePath) { sp.Free() })
 	return sp
 }
@@ -268,7 +269,9 @@ func (p *StorePath) Free() {
 	}
 	p.once.Do(func() {
 		if p.ptr != nil {
-			C.nix_store_path_free(p.ptr)
+			if p.owned {
+				C.nix_store_path_free(p.ptr)
+			}
 			p.ptr = nil
 		}
 		runtime.SetFinalizer(p, nil)
@@ -283,6 +286,15 @@ func (p *StorePath) Ptr() *C.StorePath {
 	return p.ptr
 }
 
+// WrapBorrowedStorePath creates a non-owning view of a StorePath supplied
+// by a synchronous Nix callback. Free only invalidates this Go view.
+func WrapBorrowedStorePath(p *C.StorePath) *StorePath {
+	if p == nil {
+		return nil
+	}
+	return &StorePath{ptr: p}
+}
+
 // Clone copies a StorePath.
 func (p *StorePath) Clone() *StorePath {
 	if p == nil || p.ptr == nil {
@@ -292,7 +304,7 @@ func (p *StorePath) Clone() *StorePath {
 	if cp == nil {
 		return nil
 	}
-	sp := &StorePath{ptr: cp}
+	sp := &StorePath{ptr: cp, owned: true}
 	runtime.SetFinalizer(sp, func(sp *StorePath) { sp.Free() })
 	return sp
 }
