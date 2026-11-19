@@ -25,7 +25,7 @@ func (v *Value) CopyFrom(source *Value) error {
 	if err := source.ensureOpen(); err != nil {
 		return err
 	}
-	if v.state != source.state {
+	if v.state == nil || source.state == nil || !v.state.Same(source.state) {
 		return fmt.Errorf("nix: values belong to different evaluator states")
 	}
 	code := v.c.CopyValue(v.ctx.Internal(), source.c)
