@@ -140,8 +140,14 @@ func Create(ctx *cutil.Context, desc *Desc, data any) *Value {
 	}
 	handle := cgo.NewHandle(&externalInstance{desc: desc, data: data})
 	self := C.nixgo_external_handle_to_ptr(C.uintptr_t(handle))
+	if self == nil {
+		handle.Delete()
+		desc.release()
+		return nil
+	}
 	ptr := C.nix_create_external_value(ctx.Ptr(), descPtr, self)
 	if ptr == nil {
+		C.nixgo_external_handle_free(self)
 		handle.Delete()
 		desc.release()
 		return nil
