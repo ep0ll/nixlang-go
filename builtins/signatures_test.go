@@ -69,4 +69,53 @@ func TestTypedArgumentStructs(t *testing.T) {
 	if drvAttrs["name"] != "example" || drvAttrs["MESSAGE"] != "hello" {
 		t.Fatalf("DerivationAttrs conversion = %#v", drvAttrs)
 	}
+	searchPath := builtins.SearchPathEntry{
+		Prefix: "nixpkgs",
+		Path:   builtins.Path("./nixpkgs"),
+	}
+	if got := searchPath.ToNixAttrs(); got["prefix"] != "nixpkgs" {
+		t.Fatalf("SearchPathEntry conversion = %#v", got)
+	}
+
+	fetchClosure := builtins.FetchClosureArgs{
+		FromPath:  builtins.Path("/nix/store/example-source"),
+		FromStore: "https://cache.nixos.org",
+		ToPath:    "",
+	}
+	closureAttrs := fetchClosure.ToNixAttrs()
+	if closureAttrs["toPath"] != "" || closureAttrs["fromStore"] != "https://cache.nixos.org" {
+		t.Fatalf("FetchClosureArgs conversion = %#v", closureAttrs)
+	}
+
+	shallow := true
+	fetchGit := builtins.FetchGitArgs{
+		URL:        "https://example.com/source.git",
+		Rev:        "0123456789abcdef",
+		Submodules: &shallow,
+	}
+	gitAttrs := fetchGit.ToNixAttrs()
+	if gitAttrs["url"] != "https://example.com/source.git" || gitAttrs["submodules"] != true {
+		t.Fatalf("FetchGitArgs conversion = %#v", gitAttrs)
+	}
+
+	fetchTree := builtins.FetchTreeArgs{
+		Type:    "git",
+		URL:     "https://example.com/source.git",
+		NarHash: "sha256-example",
+	}
+	treeAttrs := fetchTree.ToNixAttrs()
+	if treeAttrs["type"] != "git" || treeAttrs["narHash"] != "sha256-example" {
+		t.Fatalf("FetchTreeArgs conversion = %#v", treeAttrs)
+	}
+
+	flakeRef := builtins.FlakeRefAttrs{
+		Type:  "github",
+		Owner: "NixOS",
+		Repo:  "nixpkgs",
+		Ref:   "nixos-unstable",
+	}
+	flakeAttrs := flakeRef.ToNixAttrs()
+	if flakeAttrs["type"] != "github" || flakeAttrs["owner"] != "NixOS" {
+		t.Fatalf("FlakeRefAttrs conversion = %#v", flakeAttrs)
+	}
 }
