@@ -58,7 +58,7 @@ func (s *Store) GetFSClosure(
 	flipDirection, includeOutputs, includeDerivers bool,
 	cb func(*StorePath),
 ) cutil.Err {
-	if s == nil || s.ptr == nil || path == nil || path.ptr == nil {
+	if ctx == nil || ctx.Ptr() == nil || s == nil || s.ptr == nil || path == nil || path.ptr == nil {
 		return cutil.ErrUnknown
 	}
 	if cb == nil {
