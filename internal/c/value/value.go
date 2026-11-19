@@ -65,6 +65,7 @@ type PrimOp struct {
 	ptr      *C.PrimOp
 	handle   uintptr
 	userdata unsafe.Pointer
+	retained bool
 }
 
 // WrapPtr wraps an existing C nix_value pointer (takes ownership of one ref).
@@ -335,7 +336,25 @@ func (v *Value) InitPrimOp(ctx *cutil.Context, op *PrimOp) cutil.Err {
 	if v == nil || v.ptr == nil || op == nil || op.ptr == nil {
 		return cutil.ErrUnknown
 	}
-	return cutil.FromCErr(C.nix_init_primop(ctx.Ptr(), v.ptr, op.ptr))
+	err := cutil.FromCErr(C.nix_init_primop(ctx.Ptr(), v.ptr, op.ptr))
+	if err == cutil.OK {
+		op.RetainForValue()
+	}
+	return err
+}
+
+// RetainForValue transfers callback userdata lifetime to the Nix value graph.
+// Nix's GC finalizer API is a no-op in builds without Boehm GC, so callback
+// handles are deliberately pinned for the process lifetime once a primop is
+// installed into a value. The C PrimOp reference itself remains owned by this
+// wrapper until Free is called.
+func (p *PrimOp) RetainForValue() {
+	if p == nil || p.ptr == nil || p.retained {
+		return
+	}
+	p.retained = true
+	p.handle = 0
+	p.userdata = nil
 }
 
 // InitNull initializes to null.
