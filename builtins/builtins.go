@@ -271,7 +271,9 @@ func (b *Builtins) fromGo(input any) (*value.Value, bool, error) {
 				}
 			}
 			err = out.SetList(elems)
-			for _, child := range owned { child.Close() }
+			for _, child := range owned {
+				child.Close()
+			}
 		case reflect.Map:
 			if rv.Type().Key().Kind() != reflect.String {
 				return fail(fmt.Errorf("attribute-set map keys must be strings, got %s", rv.Type().Key()))
@@ -282,19 +284,27 @@ func (b *Builtins) fromGo(input any) (*value.Value, bool, error) {
 			for iter.Next() {
 				key := iter.Key().String()
 				if !iter.Value().CanInterface() {
-					for _, child := range owned { child.Close() }
+					for _, child := range owned {
+						child.Close()
+					}
 					return fail(fmt.Errorf("attribute %q cannot be accessed", key))
 				}
 				child, closeChild, childErr := b.fromGo(iter.Value().Interface())
 				if childErr != nil {
-					for _, opened := range owned { opened.Close() }
+					for _, opened := range owned {
+						opened.Close()
+					}
 					return fail(fmt.Errorf("attribute %q: %w", key, childErr))
 				}
 				attrs[key] = child
-				if closeChild { owned = append(owned, child) }
+				if closeChild {
+					owned = append(owned, child)
+				}
 			}
 			err = out.SetAttrs(attrs)
-			for _, child := range owned { child.Close() }
+			for _, child := range owned {
+				child.Close()
+			}
 		default:
 			return fail(fmt.Errorf("unsupported Go argument type %T; use primitives, Path, slices, string-keyed maps, or *value.Value", input))
 		}
