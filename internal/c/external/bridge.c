@@ -34,12 +34,20 @@ void nixgo_external_desc_free(NixCExternalValueDesc * desc)
 
 void * nixgo_external_handle_to_ptr(uintptr_t handle)
 {
-    return (void *) handle;
+    uintptr_t * token = malloc(sizeof(uintptr_t));
+    if (token != NULL)
+        *token = handle;
+    return token;
 }
 
 uintptr_t nixgo_external_handle_from_ptr(void * ptr)
 {
-    return (uintptr_t) ptr;
+    return ptr == NULL ? 0 : *(uintptr_t *) ptr;
+}
+
+void nixgo_external_handle_free(void * ptr)
+{
+    free(ptr);
 }
 
 void nixgo_external_register_finalizer(void * object, uintptr_t handle)
