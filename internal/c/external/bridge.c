@@ -12,18 +12,18 @@ extern void cgoExternalPrintValueAsJSON(void *, EvalState *, bool, nix_string_co
 extern void cgoExternalPrintValueAsXML(void *, EvalState *, int, int, void *, nix_string_context *, void *, int);
 extern void cgoExternalFinalizer(void *, void *);
 
-NixCExternalValueDesc * nixgo_external_desc_new(void)
+NixCExternalValueDesc * nixgo_external_desc_new(uint32_t flags)
 {
     NixCExternalValueDesc * desc = calloc(1, sizeof(NixCExternalValueDesc));
     if (desc == NULL)
         return NULL;
-    desc->print = cgoExternalPrint;
-    desc->showType = cgoExternalShowType;
-    desc->typeOf = cgoExternalTypeOf;
-    desc->coerceToString = cgoExternalCoerceToString;
-    desc->equal = cgoExternalEqual;
-    desc->printValueAsJSON = cgoExternalPrintValueAsJSON;
-    desc->printValueAsXML = cgoExternalPrintValueAsXML;
+    if (flags & NIXGO_EXTERNAL_PRINT) desc->print = cgoExternalPrint;
+    if (flags & NIXGO_EXTERNAL_SHOW_TYPE) desc->showType = cgoExternalShowType;
+    if (flags & NIXGO_EXTERNAL_TYPE_OF) desc->typeOf = cgoExternalTypeOf;
+    if (flags & NIXGO_EXTERNAL_COERCE) desc->coerceToString = cgoExternalCoerceToString;
+    if (flags & NIXGO_EXTERNAL_EQUAL) desc->equal = cgoExternalEqual;
+    if (flags & NIXGO_EXTERNAL_JSON) desc->printValueAsJSON = cgoExternalPrintValueAsJSON;
+    if (flags & NIXGO_EXTERNAL_XML) desc->printValueAsXML = cgoExternalPrintValueAsXML;
     return desc;
 }
 
