@@ -20,7 +20,6 @@ import (
 	"runtime/cgo"
 	"unsafe"
 
-	cexpr "github.com/ep0ll/nixlang-go/internal/c/expr"
 	cutil "github.com/ep0ll/nixlang-go/internal/c/util"
 )
 
@@ -139,18 +138,16 @@ func (p *PrimOp) Free() {
 	p.handle = 0
 	p.userdata = nil
 
-	// Free releases only this wrapper's reference. A nix_value may retain the
-	// primop; Nix's GC finalizer releases the callback handle after the object
-	// itself is no longer reachable from Nix.
+	// A retained primop has already transferred its callback handle to Nix
+	// and deliberately cleared both fields. An unretained primop cannot be
+	// invoked after this wrapper is released, so its handle can be deleted now.
+	C.nix_gc_decref(nil, unsafe.Pointer(ptr))
 	if handle != 0 {
-		cexpr.RegisterGCFinalizer(unsafe.Pointer(ptr), func(unsafe.Pointer) {
-			defer C.nixgo_primop_handle_free(userdata)
-			handle.Delete()
-		})
-	} else if userdata != nil {
+		handle.Delete()
+	}
+	if userdata != nil {
 		C.nixgo_primop_handle_free(userdata)
 	}
-	C.nix_gc_decref(nil, unsafe.Pointer(ptr))
 	runtime.SetFinalizer(p, nil)
 }
 
