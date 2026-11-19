@@ -4,27 +4,27 @@ package builtins
 import "github.com/ep0ll/nixlang-go/value"
 
 // Add calls builtins.add.
-func (b *Builtins) Add(left any, right any) (*value.Value, error) {
+func (b *Builtins) Add(left Number, right Number) (*value.Value, error) {
 	return b.Call("add", left, right)
 }
 
 // AddDrvOutputDependencies calls builtins.addDrvOutputDependencies.
-func (b *Builtins) AddDrvOutputDependencies(input any) (*value.Value, error) {
+func (b *Builtins) AddDrvOutputDependencies(input StringCoercible) (*value.Value, error) {
 	return b.Call("addDrvOutputDependencies", input)
 }
 
 // AddErrorContext calls builtins.addErrorContext.
-func (b *Builtins) AddErrorContext(context any, value any) (*value.Value, error) {
+func (b *Builtins) AddErrorContext(context StringCoercible, value any) (*value.Value, error) {
 	return b.Call("addErrorContext", context, value)
 }
 
 // Abort calls builtins.abort.
-func (b *Builtins) Abort(message any) (*value.Value, error) {
+func (b *Builtins) Abort(message StringCoercible) (*value.Value, error) {
 	return b.Call("abort", message)
 }
 
 // Throw calls builtins.throw.
-func (b *Builtins) Throw(message any) (*value.Value, error) {
+func (b *Builtins) Throw(message StringCoercible) (*value.Value, error) {
 	return b.Call("throw", message)
 }
 
@@ -54,7 +54,7 @@ func (b *Builtins) AttrValues(set AttrSet) (*value.Value, error) {
 }
 
 // BaseNameOf calls builtins.baseNameOf.
-func (b *Builtins) BaseNameOf(path any) (*value.Value, error) {
+func (b *Builtins) BaseNameOf(path PathLike) (*value.Value, error) {
 	return b.Call("baseNameOf", path)
 }
 
@@ -84,7 +84,7 @@ func (b *Builtins) CatAttrs(name string, list []AttrSet) (*value.Value, error) {
 }
 
 // Ceil calls builtins.ceil.
-func (b *Builtins) Ceil(number any) (*value.Value, error) {
+func (b *Builtins) Ceil(number Number) (*value.Value, error) {
 	return b.Call("ceil", number)
 }
 
@@ -104,7 +104,7 @@ func (b *Builtins) ConcatMap(function Function, list []any) (*value.Value, error
 }
 
 // ConcatStringsSep calls builtins.concatStringsSep.
-func (b *Builtins) ConcatStringsSep(separator string, strings []any) (*value.Value, error) {
+func (b *Builtins) ConcatStringsSep(separator string, strings []StringCoercible) (*value.Value, error) {
 	return b.Call("concatStringsSep", separator, strings)
 }
 
@@ -124,12 +124,12 @@ func (b *Builtins) DerivationStrict(attrs DerivationAttrs) (*value.Value, error)
 }
 
 // DirOf calls builtins.dirOf.
-func (b *Builtins) DirOf(path any) (*value.Value, error) {
+func (b *Builtins) DirOf(path PathLike) (*value.Value, error) {
 	return b.Call("dirOf", path)
 }
 
 // Div calls builtins.div.
-func (b *Builtins) Div(left any, right any) (*value.Value, error) {
+func (b *Builtins) Div(left Number, right Number) (*value.Value, error) {
 	return b.Call("div", left, right)
 }
 
@@ -154,22 +154,22 @@ func (b *Builtins) FetchClosure(args FetchClosureArgs) (*value.Value, error) {
 }
 
 // FetchGit calls builtins.fetchGit.
-func (b *Builtins) FetchGit(args any) (*value.Value, error) {
+func (b *Builtins) FetchGit(args FetchGitArgs) (*value.Value, error) {
 	return b.Call("fetchGit", args)
 }
 
 // FetchMercurial calls builtins.fetchMercurial.
-func (b *Builtins) FetchMercurial(args any) (*value.Value, error) {
+func (b *Builtins) FetchMercurial(args FetchMercurialArgs) (*value.Value, error) {
 	return b.Call("fetchMercurial", args)
 }
 
 // FetchTarball calls builtins.fetchTarball.
-func (b *Builtins) FetchTarball(args any) (*value.Value, error) {
+func (b *Builtins) FetchTarball(args FetchTarballArgs) (*value.Value, error) {
 	return b.Call("fetchTarball", args)
 }
 
 // FetchTree calls builtins.fetchTree.
-func (b *Builtins) FetchTree(input any) (*value.Value, error) {
+func (b *Builtins) FetchTree(input FetchTreeArgs) (*value.Value, error) {
 	return b.Call("fetchTree", input)
 }
 
@@ -179,7 +179,7 @@ func (b *Builtins) Filter(predicate Function, list []any) (*value.Value, error) 
 }
 
 // FilterSource calls builtins.filterSource.
-func (b *Builtins) FilterSource(predicate Function, path any) (*value.Value, error) {
+func (b *Builtins) FilterSource(predicate Function, path PathLike) (*value.Value, error) {
 	return b.Call("filterSource", predicate, path)
 }
 
@@ -189,7 +189,7 @@ func (b *Builtins) FindFile(searchPath []SearchPathEntry, lookupPath string) (*v
 }
 
 // Floor calls builtins.floor.
-func (b *Builtins) Floor(number any) (*value.Value, error) {
+func (b *Builtins) Floor(number Number) (*value.Value, error) {
 	return b.Call("floor", number)
 }
 
@@ -239,7 +239,7 @@ func (b *Builtins) GetEnv(name string) (*value.Value, error) {
 }
 
 // GetFlake calls builtins.getFlake.
-func (b *Builtins) GetFlake(ref any) (*value.Value, error) {
+func (b *Builtins) GetFlake(ref FlakeReference) (*value.Value, error) {
 	return b.Call("getFlake", ref)
 }
 
@@ -249,12 +249,12 @@ func (b *Builtins) GroupBy(function Function, list []any) (*value.Value, error) 
 }
 
 // HashFile calls builtins.hashFile.
-func (b *Builtins) HashFile(algorithm string, path any) (*value.Value, error) {
+func (b *Builtins) HashFile(algorithm HashAlgorithm, path PathLike) (*value.Value, error) {
 	return b.Call("hashFile", algorithm, path)
 }
 
 // HashString calls builtins.hashString.
-func (b *Builtins) HashString(algorithm string, input string) (*value.Value, error) {
+func (b *Builtins) HashString(algorithm HashAlgorithm, input string) (*value.Value, error) {
 	return b.Call("hashString", algorithm, input)
 }
 
@@ -274,12 +274,12 @@ func (b *Builtins) Head(list []any) (*value.Value, error) {
 }
 
 // Import calls builtins.import.
-func (b *Builtins) Import(path any) (*value.Value, error) {
+func (b *Builtins) Import(path PathLike) (*value.Value, error) {
 	return b.Call("import", path)
 }
 
 // ImportNative calls builtins.importNative.
-func (b *Builtins) ImportNative(path any, symbol string) (*value.Value, error) {
+func (b *Builtins) ImportNative(path PathLike, symbol string) (*value.Value, error) {
 	return b.Call("importNative", path, symbol)
 }
 
@@ -339,7 +339,7 @@ func (b *Builtins) Length(list []any) (*value.Value, error) {
 }
 
 // LessThan calls builtins.lessThan.
-func (b *Builtins) LessThan(left any, right any) (*value.Value, error) {
+func (b *Builtins) LessThan(left ComparisonValue, right ComparisonValue) (*value.Value, error) {
 	return b.Call("lessThan", left, right)
 }
 
@@ -364,7 +364,7 @@ func (b *Builtins) Match(regex string, input string) (*value.Value, error) {
 }
 
 // Mul calls builtins.mul.
-func (b *Builtins) Mul(left any, right any) (*value.Value, error) {
+func (b *Builtins) Mul(left Number, right Number) (*value.Value, error) {
 	return b.Call("mul", left, right)
 }
 
@@ -394,7 +394,7 @@ func (b *Builtins) Path(args PathArgs) (*value.Value, error) {
 }
 
 // PathExists calls builtins.pathExists.
-func (b *Builtins) PathExists(path any) (*value.Value, error) {
+func (b *Builtins) PathExists(path PathLike) (*value.Value, error) {
 	return b.Call("pathExists", path)
 }
 
@@ -404,17 +404,17 @@ func (b *Builtins) Placeholder(output string) (*value.Value, error) {
 }
 
 // ReadDir calls builtins.readDir.
-func (b *Builtins) ReadDir(path any) (*value.Value, error) {
+func (b *Builtins) ReadDir(path PathLike) (*value.Value, error) {
 	return b.Call("readDir", path)
 }
 
 // ReadFile calls builtins.readFile.
-func (b *Builtins) ReadFile(path any) (*value.Value, error) {
+func (b *Builtins) ReadFile(path PathLike) (*value.Value, error) {
 	return b.Call("readFile", path)
 }
 
 // ReadFileType calls builtins.readFileType.
-func (b *Builtins) ReadFileType(path any) (*value.Value, error) {
+func (b *Builtins) ReadFileType(path PathLike) (*value.Value, error) {
 	return b.Call("readFileType", path)
 }
 
@@ -429,7 +429,7 @@ func (b *Builtins) ReplaceStrings(from []string, to []string, input string) (*va
 }
 
 // ScopedImport calls builtins.scopedImport.
-func (b *Builtins) ScopedImport(scope AttrSet, path any) (*value.Value, error) {
+func (b *Builtins) ScopedImport(scope AttrSet, path PathLike) (*value.Value, error) {
 	return b.Call("scopedImport", scope, path)
 }
 
@@ -454,7 +454,7 @@ func (b *Builtins) SplitVersion(version string) (*value.Value, error) {
 }
 
 // StorePath calls builtins.storePath.
-func (b *Builtins) StorePath(path any) (*value.Value, error) {
+func (b *Builtins) StorePath(path PathLike) (*value.Value, error) {
 	return b.Call("storePath", path)
 }
 
@@ -464,7 +464,7 @@ func (b *Builtins) StringLength(input string) (*value.Value, error) {
 }
 
 // Sub calls builtins.sub.
-func (b *Builtins) Sub(left any, right any) (*value.Value, error) {
+func (b *Builtins) Sub(left Number, right Number) (*value.Value, error) {
 	return b.Call("sub", left, right)
 }
 
@@ -489,12 +489,12 @@ func (b *Builtins) ToJSON(expr any) (*value.Value, error) {
 }
 
 // ToPath calls builtins.toPath.
-func (b *Builtins) ToPath(path any) (*value.Value, error) {
+func (b *Builtins) ToPath(path PathLike) (*value.Value, error) {
 	return b.Call("toPath", path)
 }
 
 // ToString calls builtins.toString.
-func (b *Builtins) ToString(value any) (*value.Value, error) {
+func (b *Builtins) ToString(value StringCoercible) (*value.Value, error) {
 	return b.Call("toString", value)
 }
 
@@ -524,12 +524,12 @@ func (b *Builtins) TypeOf(expr any) (*value.Value, error) {
 }
 
 // UnsafeDiscardOutputDependency calls builtins.unsafeDiscardOutputDependency.
-func (b *Builtins) UnsafeDiscardOutputDependency(input any) (*value.Value, error) {
+func (b *Builtins) UnsafeDiscardOutputDependency(input StringCoercible) (*value.Value, error) {
 	return b.Call("unsafeDiscardOutputDependency", input)
 }
 
 // UnsafeDiscardStringContext calls builtins.unsafeDiscardStringContext.
-func (b *Builtins) UnsafeDiscardStringContext(input any) (*value.Value, error) {
+func (b *Builtins) UnsafeDiscardStringContext(input StringCoercible) (*value.Value, error) {
 	return b.Call("unsafeDiscardStringContext", input)
 }
 
@@ -549,7 +549,7 @@ func (b *Builtins) ZipAttrsWith(function Function, list []AttrSet) (*value.Value
 }
 
 // FetchURL calls builtins.fetchurl.
-func (b *Builtins) FetchURL(args any) (*value.Value, error) {
+func (b *Builtins) FetchURL(args FetchURLArgs) (*value.Value, error) {
 	return b.Call("fetchurl", args)
 }
 
