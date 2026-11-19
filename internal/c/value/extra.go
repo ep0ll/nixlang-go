@@ -10,6 +10,7 @@ package value
 */
 import "C"
 import (
+	"runtime"
 	"unsafe"
 
 	cexpr "github.com/ep0ll/nixlang-go/internal/c/expr"
@@ -53,7 +54,9 @@ func StringRealise(ctx *cutil.Context, state *cexpr.EvalState, v *Value, isIFD b
 	if p == nil {
 		return nil
 	}
-	return &RealisedString{ptr: p}
+	r := &RealisedString{ptr: p}
+	runtime.SetFinalizer(r, (*RealisedString).Free)
+	return r
 }
 
 // Free releases a realised string.
@@ -61,6 +64,7 @@ func (r *RealisedString) Free() {
 	if r != nil && r.ptr != nil {
 		C.nix_realised_string_free(r.ptr)
 		r.ptr = nil
+		runtime.SetFinalizer(r, nil)
 	}
 }
 
@@ -87,7 +91,7 @@ func (r *RealisedString) StorePathCount() int {
 
 // StorePathAt returns the store path at index (borrowed; do not free).
 func (r *RealisedString) StorePathAt(index int) unsafe.Pointer {
-	if r == nil || r.ptr == nil {
+	if r == nil || r.ptr == nil || index < 0 || index >= r.StorePathCount() {
 		return nil
 	}
 	p := C.nix_realised_string_get_store_path(r.ptr, C.size_t(index))
