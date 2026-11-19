@@ -16,7 +16,7 @@ var (
 	_ func(*builtins.Builtins, string, string) (*value.Value, error) = (*builtins.Builtins).ToFile
 	_ func(*builtins.Builtins, int64, int64) (*value.Value, error) = (*builtins.Builtins).Substring
 	_ func(*builtins.Builtins, int64, int64) (*value.Value, error) = (*builtins.Builtins).BitAnd
-	_ func(*builtins.Builtins, builtins.Function, any) (*value.Value, error) = (*builtins.Builtins).Map
+	_ func(*builtins.Builtins, builtins.Function, []any) (*value.Value, error) = (*builtins.Builtins).Map
 	_ func(*builtins.Builtins, builtins.ConvertHashArgs) (*value.Value, error) = (*builtins.Builtins).ConvertHash
 	_ func(*builtins.Builtins, builtins.FetchClosureArgs) (*value.Value, error) = (*builtins.Builtins).FetchClosure
 	_ func(*builtins.Builtins, builtins.PathArgs) (*value.Value, error) = (*builtins.Builtins).Path
@@ -24,6 +24,8 @@ var (
 	_ func(*builtins.Builtins, string, []builtins.AttrSet) (*value.Value, error) = (*builtins.Builtins).CatAttrs
 	_ func(*builtins.Builtins, []builtins.NameValue) (*value.Value, error) = (*builtins.Builtins).ListToAttrs
 	_ func(*builtins.Builtins, builtins.Function, []builtins.AttrSet) (*value.Value, error) = (*builtins.Builtins).ZipAttrsWith
+	_ func(*builtins.Builtins, [][]any) (*value.Value, error) = (*builtins.Builtins).ConcatLists
+	_ func(*builtins.Builtins, []any, int64) (*value.Value, error) = (*builtins.Builtins).ElemAt
 )
 
 func TestTypedArgumentStructs(t *testing.T) {
