@@ -19,12 +19,12 @@ func (b *Builtins) AddErrorContext(context any, value any) (*value.Value, error)
 }
 
 // Abort calls builtins.abort.
-func (b *Builtins) Abort(message string) (*value.Value, error) {
+func (b *Builtins) Abort(message any) (*value.Value, error) {
 	return b.Call("abort", message)
 }
 
 // Throw calls builtins.throw.
-func (b *Builtins) Throw(message string) (*value.Value, error) {
+func (b *Builtins) Throw(message any) (*value.Value, error) {
 	return b.Call("throw", message)
 }
 
