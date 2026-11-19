@@ -157,8 +157,8 @@ func TestRegistryAndRuntimeDiscovery(t *testing.T) {
 		if spec.Name == "add" && spec.Arity == 2 {
 			foundAdd = len(spec.Args) == 2 &&
 				len(spec.GoTypes) == 2 &&
-				spec.GoTypes[0] == "any" &&
-				spec.GoTypes[1] == "any"
+				spec.GoTypes[0] == "Number" &&
+				spec.GoTypes[1] == "Number"
 			break
 		}
 	}
@@ -200,7 +200,7 @@ func TestStaticallyTypedBuiltinArguments(t *testing.T) {
 
 	converted, err := b.ConvertHash(nixbuiltins.ConvertHashArgs{
 		Hash:         "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-		HashAlgo:     "sha256",
+		HashAlgo:     nixbuiltins.HashSHA256,
 		ToHashFormat: nixbuiltins.HashFormatSRI,
 	})
 	if err != nil {
