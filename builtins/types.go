@@ -19,6 +19,17 @@ type AttrConvertible interface {
 	ToNixAttrs() AttrSet
 }
 
+
+// NameValue is one element accepted by builtins.listToAttrs.
+type NameValue struct {
+	Name  string
+	Value any
+}
+
+func (a NameValue) ToNixAttrs() AttrSet {
+	return AttrSet{"name": a.Name, "value": a.Value}
+}
+
 // SearchPathEntry describes an entry supplied to builtins.findFile.
 type SearchPathEntry struct {
 	Prefix string
