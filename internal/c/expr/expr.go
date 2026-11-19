@@ -19,7 +19,8 @@ import (
 
 // EvalState wraps the Nix evaluator state.
 type EvalState struct {
-	ptr *C.EvalState
+	ptr   *C.EvalState
+	owned bool
 }
 
 // Builder wraps nix_eval_state_builder.
@@ -86,7 +87,7 @@ func (b *Builder) Build(ctx *cutil.Context) *EvalState {
 	if p == nil {
 		return nil
 	}
-	s := &EvalState{ptr: p}
+	s := &EvalState{ptr: p, owned: true}
 	runtime.SetFinalizer(s, func(s *EvalState) { s.Free() })
 	return s
 }
@@ -121,10 +122,17 @@ func Create(ctx *cutil.Context, lookupPath []string, store *cstore.Store) *EvalS
 	return s
 }
 
-// Free releases the EvalState.
+// WrapState creates a borrowed Go view of an evaluator state owned by Nix.
+// Free invalidates only the Go view and does not release the underlying state.
+func WrapState(p unsafe.Pointer) *EvalState {
+	if p == nil { return nil }
+	return &EvalState{ptr: (*C.EvalState)(p)}
+}
+
+// Free releases an owned EvalState. Borrowed callback views are only invalidated.
 func (s *EvalState) Free() {
 	if s != nil && s.ptr != nil {
-		C.nix_state_free(s.ptr)
+		if s.owned { C.nix_state_free(s.ptr) }
 		s.ptr = nil
 		runtime.SetFinalizer(s, nil)
 	}
