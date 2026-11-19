@@ -4,7 +4,6 @@
 set -euo pipefail
 
 packages=(nix-util-c nix-store-c nix-expr-c nix-fetchers-c nix-flake-c nix-main-c)
-headers=(nix_api_util.h nix_api_store.h nix_api_store/store_path.h nix_api_store/derivation.h nix_api_expr.h nix_api_value.h nix_api_external.h nix_api_fetchers.h nix_api_flake.h nix_api_main.h)
 
 echo '== pkg-config packages ==' 
 for package in "${packages[@]}"; do
@@ -26,18 +25,17 @@ if [ "${#include_dirs[@]}" -eq 0 ]; then
   exit 1
 fi
 
-header_paths=()
-for header in "${headers[@]}"; do
-  found=''
+mapfile -t header_paths < <(
   for dir in "${include_dirs[@]}"; do
-    if [ -f "$dir/$header" ]; then found="$dir/$header"; break; fi
-  done
-  if [ -z "$found" ]; then
-    echo "error: missing $header in pkg-config include directories" >&2
-    exit 1
-  fi
-  header_paths+=("$found")
-  echo "  OK  $header"
+    find "$dir" -type f -name 'nix_api*.h' ! -name '*_internal.h' -print
+  done | sort -u
+)
+if [ "${#header_paths[@]}" -eq 0 ]; then
+  echo 'error: no public nix_api*.h headers found in pkg-config include directories' >&2
+  exit 1
+fi
+for header in "${header_paths[@]}"; do
+  echo "  OK  ${header#*/include/}"
 done
 
 echo '== declared C API function coverage ==' 
@@ -45,7 +43,8 @@ missing=0
 for header in "${header_paths[@]}"; do
   while IFS= read -r symbol; do
     [ -z "$symbol" ] && continue
-    if ! grep -R --include='*.go' -F -q "C.$symbol" internal/c; then
+    if ! grep -R --include='*.go' -F -q "C.$symbol" internal/c &&
+       ! grep -R -E --include='*.c' --include='*.cc' --include='*.cpp' -q "\\b$symbol[[:space:]]*\\(" internal/c; then
       echo "  MISSING binding: $symbol ($header)"
       missing=1
     fi
