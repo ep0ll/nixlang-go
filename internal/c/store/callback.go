@@ -5,6 +5,7 @@ package store
 #include <nix_api_store.h>
 #include <nix_api_util.h>
 #include <stdlib.h>
+#include "bridge.h"
 */
 import "C"
 import (
@@ -50,7 +51,7 @@ func unregisterRealiseCB(id uintptr) {
 //export cgoRealiseCB
 func cgoRealiseCB(userdata unsafe.Pointer, outname *C.char, out *C.StorePath) {
 	defer func() { recover() }()
-	id := uintptr(userdata)
+	id := uintptr(C.nixgo_store_userdata_to_id(userdata))
 	realiseMu.Lock()
 	cb := realiseSlots[id]
 	realiseMu.Unlock()
