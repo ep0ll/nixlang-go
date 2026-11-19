@@ -41,14 +41,17 @@ func (s *PrimOpState) AllocValue() (*Value, error) {
 	if err := s.ensureOpen(); err != nil {
 		return nil, err
 	}
-	v := cvalue.Alloc(s.ctx.Internal(), s.state)
+	ctx := util.NewContext()
+	v := cvalue.Alloc(ctx.Internal(), s.state)
 	if v == nil {
-		if err := s.ctx.Err(); err != nil {
+		err := ctx.Err()
+		ctx.Close()
+		if err != nil {
 			return nil, err
 		}
 		return nil, fmt.Errorf("nix: failed to allocate primop value")
 	}
-	return FromInternal(s.ctx, s.state, v), nil
+	return &Value{c: v, state: s.state, ctx: ctx, ownsContext: true}, nil
 }
 
 // NewList constructs a list in the callback evaluator.
@@ -56,7 +59,14 @@ func (s *PrimOpState) NewList(elems ...*Value) (*Value, error) {
 	if err := s.ensureOpen(); err != nil {
 		return nil, err
 	}
-	return NewList(s.ctx, s.state, elems)
+	ctx := util.NewContext()
+	v, err := NewList(ctx, s.state, elems)
+	if err != nil {
+		ctx.Close()
+		return nil, err
+	}
+	v.ownsContext = true
+	return v, nil
 }
 
 // NewAttrs constructs an attribute set in the callback evaluator.
@@ -64,7 +74,14 @@ func (s *PrimOpState) NewAttrs(attrs map[string]*Value) (*Value, error) {
 	if err := s.ensureOpen(); err != nil {
 		return nil, err
 	}
-	return NewAttrs(s.ctx, s.state, attrs)
+	ctx := util.NewContext()
+	v, err := NewAttrs(ctx, s.state, attrs)
+	if err != nil {
+		ctx.Close()
+		return nil, err
+	}
+	v.ownsContext = true
+	return v, nil
 }
 
 // EvalString parses and evaluates an expression in the callback evaluator.
