@@ -144,8 +144,8 @@ func (p *PrimOp) Free() {
 	// itself is no longer reachable from Nix.
 	if handle != 0 {
 		cexpr.RegisterGCFinalizer(unsafe.Pointer(ptr), func(unsafe.Pointer) {
+			defer C.nixgo_primop_handle_free(userdata)
 			handle.Delete()
-			C.nixgo_primop_handle_free(userdata)
 		})
 	} else if userdata != nil {
 		C.nixgo_primop_handle_free(userdata)
