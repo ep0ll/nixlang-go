@@ -76,7 +76,7 @@ jobs:
             set -euo pipefail
             export CGO_ENABLED=1
             echo "Nix: $(nix --version || true)"
-            if ./scripts/check-capi.sh; then
+            if bash ./scripts/check-capi.sh; then
               echo "check-capi OK"
               go test -tags=nix ./... -count=1
             else
