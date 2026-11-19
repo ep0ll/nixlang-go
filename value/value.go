@@ -167,7 +167,10 @@ func (v *Value) ListAt(i int) (*Value, error) {
 	}
 	cv := v.c.ListByIdx(v.ctx.Internal(), v.state, uint(i))
 	if cv == nil {
-		return nil, v.ctx.Err()
+		if err := v.ctx.Err(); err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("nix: list index %d out of range", i)
 	}
 	return FromInternal(v.ctx, v.state, cv), nil
 }
@@ -182,7 +185,10 @@ func (v *Value) ListAtLazy(i int) (*Value, error) {
 	}
 	cv := v.c.ListByIdxLazy(v.ctx.Internal(), v.state, uint(i))
 	if cv == nil {
-		return nil, v.ctx.Err()
+		if err := v.ctx.Err(); err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("nix: list index %d out of range", i)
 	}
 	return FromInternal(v.ctx, v.state, cv), nil
 }
@@ -380,14 +386,31 @@ func (v *Value) SetPath(path string) error {
 
 // NewList builds a list value from elements.
 func NewList(ctx *util.Context, state *cexpr.EvalState, elems []*Value) (*Value, error) {
+	if ctx == nil || state == nil {
+		return nil, fmt.Errorf("nix: context and evaluator state are required")
+	}
+	for i, elem := range elems {
+		if elem == nil || elem.c == nil {
+			return nil, fmt.Errorf("nix: list element %d is nil or closed", i)
+		}
+		if elem.state != state {
+			return nil, fmt.Errorf("nix: list element %d belongs to a different evaluator state", i)
+		}
+	}
 	v := cvalue.Alloc(ctx.Internal(), state)
 	if v == nil {
-		return nil, ctx.Err()
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("nix: failed to allocate list value")
 	}
 	b := cvalue.MakeListBuilder(ctx.Internal(), state, uint(len(elems)))
 	if b == nil {
 		v.Decref()
-		return nil, ctx.Err()
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("nix: failed to allocate list builder")
 	}
 	defer b.Free()
 	for i, e := range elems {
@@ -405,14 +428,31 @@ func NewList(ctx *util.Context, state *cexpr.EvalState, elems []*Value) (*Value,
 
 // NewAttrs builds an attribute set from a map.
 func NewAttrs(ctx *util.Context, state *cexpr.EvalState, attrs map[string]*Value) (*Value, error) {
+	if ctx == nil || state == nil {
+		return nil, fmt.Errorf("nix: context and evaluator state are required")
+	}
+	for name, elem := range attrs {
+		if elem == nil || elem.c == nil {
+			return nil, fmt.Errorf("nix: attribute %q has a nil or closed value", name)
+		}
+		if elem.state != state {
+			return nil, fmt.Errorf("nix: attribute %q belongs to a different evaluator state", name)
+		}
+	}
 	v := cvalue.Alloc(ctx.Internal(), state)
 	if v == nil {
-		return nil, ctx.Err()
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("nix: failed to allocate attribute-set value")
 	}
 	b := cvalue.MakeBindingsBuilder(ctx.Internal(), state, uint(len(attrs)))
 	if b == nil {
 		v.Decref()
-		return nil, ctx.Err()
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("nix: failed to allocate attribute bindings builder")
 	}
 	defer b.Free()
 	for name, e := range attrs {
