@@ -20,6 +20,8 @@ import (
 // strings; use Path when a builtin must receive the Nix path type.
 type Path string
 
+func (p Path) nixPathLike() any { return p }
+
 // Builtins is a handle to the builtins attribute set for one evaluator state.
 // The evaluator state must outlive this handle and all values returned by it.
 // Like expr.State, Builtins must not be used concurrently without external
@@ -105,12 +107,11 @@ func (b *Builtins) Names() ([]string, error) {
 
 // Call invokes a builtin with Go arguments and returns its Nix value.
 //
-// Supported Go arguments are nil (Nix null), bool, signed and unsigned
-// integers that fit in int64, float32/float64, string (Nix string), Path (Nix
-// path), slices/arrays (Nix lists), string-keyed maps (Nix attribute sets),
-// and *value.Value from the same evaluator state. []byte is treated as a Nix
-// string. Function-valued arguments should be supplied as *value.Value,
-// typically produced by EvalString.
+// Supported Go arguments include Nix scalar values, builtins.Path and
+// builtins.StringPath, net/url.URL, crypto.Hash, the typed Number and
+// ComparisonValue unions, slices/arrays, string-keyed maps, structured
+// AttrConvertible values, checked Function values, and *value.Value handles
+// from the same evaluator state. []byte is treated as a Nix string.
 //
 // Call intentionally permits partial application: passing fewer arguments
 // than the builtin's arity returns the resulting Nix function value.
