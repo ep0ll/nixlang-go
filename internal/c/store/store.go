@@ -7,6 +7,8 @@ package store
 #include <nix_api_util.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
+#include "bridge.h"
 
 typedef void (*nixgo_realise_cb)(void *userdata, const char *outname, const StorePath *out);
 extern void cgoRealiseCB(void *userdata, const char *outname, const StorePath *out);
@@ -194,7 +196,7 @@ func (s *Store) RealPath(ctx *cutil.Context, path *StorePath) (string, cutil.Err
 func (s *Store) Realise(ctx *cutil.Context, path *StorePath, cb func(outname string, out *StorePath)) cutil.Err {
 	reg := registerRealiseCB(cb)
 	defer unregisterRealiseCB(reg)
-	return cutil.FromCErr(C.nix_store_realise(ctx.Ptr(), s.ptr, path.ptr, unsafe.Pointer(reg),
+	return cutil.FromCErr(C.nix_store_realise(ctx.Ptr(), s.ptr, path.ptr, unsafe.Pointer(C.nixgo_store_id_to_userdata(C.uintptr_t(reg))),
 		C.nixgo_realise_cb(C.cgoRealiseCB)))
 }
 
