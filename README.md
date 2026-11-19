@@ -35,7 +35,7 @@ Run nix develop, then ./scripts/check-capi.sh and go test -tags=nix ./...
 | util | Contexts, structured errors, settings, version, verbosity |
 | store | Stores, paths, closure traversal, realise, derivations, copy |
 | expr | EvalState builders, evaluation, function calls, derivation inspection |
-| value | Typed values, lists, attrs, builders, retained values, custom primops |
+| value | Typed values, lists, attrs, builders, retained values, custom primops and callback-scoped evaluator operations |
 | external | Go-backed Nix external values and callback descriptors |
 | fetchers | Fetcher settings |
 | flake | Flake settings, reference parsing, locking, output attrs |
@@ -43,7 +43,7 @@ Run nix develop, then ./scripts/check-capi.sh and go test -tags=nix ./...
 
 ## Resource lifetime
 
-Close contexts, stores, states, values, descriptors, and other owned handles when finished. Finalizers are only a fallback. Values passed to primop and external-value callbacks are borrowed for the duration of the callback; use Value.Retain or the relevant Wrap API when a reference must outlive it.
+Close contexts, stores, states, values, descriptors, and other owned handles when finished. Finalizers are only a fallback. Values passed to primop and external-value callbacks are borrowed for the duration of the callback; use Value.Retain or the relevant Wrap API when a reference must outlive it. Custom primops receive a callback-scoped value.PrimOpState facade for allocating values, evaluating expressions, and calling functions. Values returned from that facade own their error contexts, but they still belong to the parent evaluator's memory arena: keep the originating expr.State open until every such value is closed. The public C API has no deterministic callback-userdata destructor for all Nix GC configurations, so Go callback handles attached to primops installed in values or the global builtin registry are retained for the process lifetime.
 
 ## License
 
