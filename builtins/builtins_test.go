@@ -50,7 +50,7 @@ func TestGoArgumentsAndGeneratedWrappers(t *testing.T) {
 	}
 	t.Cleanup(b.Close)
 
-	sum, err := b.Add(int(20), int64(22))
+	sum, err := b.Add(nixbuiltins.Integer(20), nixbuiltins.Integer(22))
 	if err != nil {
 		t.Fatalf("Add: %v", err)
 	}
@@ -185,7 +185,7 @@ func TestStaticallyTypedBuiltinArguments(t *testing.T) {
 	}
 	t.Cleanup(b.Close)
 
-	hash, err := b.HashString("sha256", "hello")
+	hash, err := b.HashString(nixbuiltins.HashSHA256, "hello")
 	if err != nil {
 		t.Fatalf("HashString: %v", err)
 	}
@@ -201,7 +201,7 @@ func TestStaticallyTypedBuiltinArguments(t *testing.T) {
 	converted, err := b.ConvertHash(nixbuiltins.ConvertHashArgs{
 		Hash:         "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
 		HashAlgo:     "sha256",
-		ToHashFormat: "sri",
+		ToHashFormat: nixbuiltins.HashFormatSRI,
 	})
 	if err != nil {
 		t.Fatalf("ConvertHash: %v", err)
@@ -215,7 +215,7 @@ func TestStaticallyTypedBuiltinArguments(t *testing.T) {
 		t.Fatalf("ConvertHash result = %q; want SRI sha256 hash", convertedString)
 	}
 
-	joined, err := b.ConcatStringsSep("/", []any{"usr", "local", "bin"})
+	joined, err := b.ConcatStringsSep("/", []nixbuiltins.StringCoercible{nixbuiltins.StringValue("usr"), nixbuiltins.StringValue("local"), nixbuiltins.StringValue("bin")})
 	if err != nil {
 		t.Fatalf("ConcatStringsSep: %v", err)
 	}
