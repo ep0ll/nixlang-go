@@ -9,8 +9,11 @@ import (
 
 // SetExternal initializes this value with a Nix C API external value.
 func (v *Value) SetExternal(externalValue *external.Value) error {
-	if v == nil || v.c == nil || externalValue == nil {
-		return fmt.Errorf("nix: value and external value are required")
+	if err := v.ensureOpen(); err != nil {
+		return err
+	}
+	if externalValue == nil {
+		return fmt.Errorf("nix: external value is required")
 	}
 	return v.ctx.Check(util.ErrorCode(v.c.InitExternal(v.ctx.Internal(), externalValue.Pointer())))
 }
