@@ -7,10 +7,8 @@ package util
 #include <stdlib.h>
 #include <stdint.h>
 
-static inline void * nixgo_util_userdata_new(uintptr_t id) {
-	uintptr_t *token = (uintptr_t *) malloc(sizeof(uintptr_t));
-	if (token != NULL) *token = id;
-	return token;
+static inline void * nixgo_util_userdata_new(void) {
+	return malloc(1);
 }
 static inline void nixgo_util_userdata_free(void *ptr) { free(ptr); }
 */
@@ -173,17 +171,14 @@ func SetVerbosity(ctx *Context, level Verbosity) Err {
 
 var (
 	strMu    sync.Mutex
-	strSlots         = make(map[unsafe.Pointer]*string)
-	strNext  uintptr = 1
+	strSlots = make(map[unsafe.Pointer]*string)
 )
 
 // RegisterStringSlot stores a *string and returns userdata for C callbacks.
 func RegisterStringSlot(s *string) unsafe.Pointer {
 	strMu.Lock()
 	defer strMu.Unlock()
-	id := strNext
-	strNext++
-	token := C.nixgo_util_userdata_new(C.uintptr_t(id))
+	token := C.nixgo_util_userdata_new()
 	if token == nil {
 		return nil
 	}
