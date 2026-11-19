@@ -47,12 +47,15 @@ type Value struct {
 
 // ListBuilder wraps ListBuilder.
 type ListBuilder struct {
-	ptr *C.ListBuilder
+	ptr      *C.ListBuilder
+	capacity uint
+	consumed bool
 }
 
 // BindingsBuilder wraps BindingsBuilder.
 type BindingsBuilder struct {
-	ptr *C.BindingsBuilder
+	ptr      *C.BindingsBuilder
+	consumed bool
 }
 
 // PrimOp wraps PrimOp.
@@ -374,17 +377,23 @@ func (v *Value) InitApply(ctx *cutil.Context, fn, arg *Value) cutil.Err {
 
 // MakeListBuilder creates a list builder.
 func MakeListBuilder(ctx *cutil.Context, state *cexpr.EvalState, capacity uint) *ListBuilder {
+	if ctx == nil || state == nil || state.Ptr() == nil || uint64(capacity) > uint64(^uint32(0)) {
+		return nil
+	}
 	p := C.nix_make_list_builder(ctx.Ptr(), state.Ptr(), C.size_t(capacity))
 	if p == nil {
 		return nil
 	}
-	b := &ListBuilder{ptr: p}
+	b := &ListBuilder{ptr: p, capacity: capacity}
 	runtime.SetFinalizer(b, func(b *ListBuilder) { b.Free() })
 	return b
 }
 
 // Insert inserts a value at index.
 func (b *ListBuilder) Insert(ctx *cutil.Context, index uint, v *Value) cutil.Err {
+	if b == nil || b.ptr == nil || b.consumed || ctx == nil || v == nil || v.ptr == nil || index >= b.capacity || uint64(index) > uint64(^uint32(0)) {
+		return cutil.ErrUnknown
+	}
 	return cutil.FromCErr(C.nix_list_builder_insert(ctx.Ptr(), b.ptr, C.uint(index), v.ptr))
 }
 
@@ -399,11 +408,21 @@ func (b *ListBuilder) Free() {
 
 // MakeList finalizes the builder into value.
 func (v *Value) MakeList(ctx *cutil.Context, b *ListBuilder) cutil.Err {
-	return cutil.FromCErr(C.nix_make_list(ctx.Ptr(), b.ptr, v.ptr))
+	if v == nil || v.ptr == nil || b == nil || b.ptr == nil || b.consumed || ctx == nil {
+		return cutil.ErrUnknown
+	}
+	err := cutil.FromCErr(C.nix_make_list(ctx.Ptr(), b.ptr, v.ptr))
+	if err == cutil.OK {
+		b.consumed = true
+	}
+	return err
 }
 
 // MakeBindingsBuilder creates an attrs builder.
 func MakeBindingsBuilder(ctx *cutil.Context, state *cexpr.EvalState, capacity uint) *BindingsBuilder {
+	if ctx == nil || state == nil || state.Ptr() == nil {
+		return nil
+	}
 	p := C.nix_make_bindings_builder(ctx.Ptr(), state.Ptr(), C.size_t(capacity))
 	if p == nil {
 		return nil
@@ -415,6 +434,9 @@ func MakeBindingsBuilder(ctx *cutil.Context, state *cexpr.EvalState, capacity ui
 
 // Insert inserts a binding.
 func (b *BindingsBuilder) Insert(ctx *cutil.Context, name string, v *Value) cutil.Err {
+	if b == nil || b.ptr == nil || b.consumed || ctx == nil || v == nil || v.ptr == nil {
+		return cutil.ErrUnknown
+	}
 	cn := C.CString(name)
 	defer C.free(unsafe.Pointer(cn))
 	return cutil.FromCErr(C.nix_bindings_builder_insert(ctx.Ptr(), b.ptr, cn, v.ptr))
@@ -431,5 +453,12 @@ func (b *BindingsBuilder) Free() {
 
 // MakeAttrs finalizes the builder into value.
 func (v *Value) MakeAttrs(ctx *cutil.Context, b *BindingsBuilder) cutil.Err {
-	return cutil.FromCErr(C.nix_make_attrs(ctx.Ptr(), v.ptr, b.ptr))
+	if v == nil || v.ptr == nil || b == nil || b.ptr == nil || b.consumed || ctx == nil {
+		return cutil.ErrUnknown
+	}
+	err := cutil.FromCErr(C.nix_make_attrs(ctx.Ptr(), v.ptr, b.ptr))
+	if err == cutil.OK {
+		b.consumed = true
+	}
+	return err
 }
