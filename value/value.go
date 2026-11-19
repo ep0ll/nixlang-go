@@ -413,6 +413,66 @@ func (v *Value) SetPath(path string) error {
 	return v.ctx.Check(util.ErrorCode(v.c.InitPathString(v.ctx.Internal(), v.state, path)))
 }
 
+// SetList initializes this value as a list containing elems. All elements
+// must belong to the same evaluator state as the receiver.
+func (v *Value) SetList(elems []*Value) error {
+	if err := v.ensureOpen(); err != nil {
+		return err
+	}
+	for i, elem := range elems {
+		if elem == nil || elem.c == nil || elem.c.Ptr() == nil {
+			return fmt.Errorf("nix: list element %d is nil or closed", i)
+		}
+		if elem.state != v.state {
+			return fmt.Errorf("nix: list element %d belongs to a different evaluator state", i)
+		}
+	}
+	builder := cvalue.MakeListBuilder(v.ctx.Internal(), v.state, uint(len(elems)))
+	if builder == nil {
+		if err := v.ctx.Err(); err != nil {
+			return err
+		}
+		return fmt.Errorf("nix: failed to allocate list builder")
+	}
+	defer builder.Free()
+	for i, elem := range elems {
+		if err := v.ctx.Check(util.ErrorCode(builder.Insert(v.ctx.Internal(), uint(i), elem.c))); err != nil {
+			return err
+		}
+	}
+	return v.ctx.Check(util.ErrorCode(v.c.MakeList(v.ctx.Internal(), builder)))
+}
+
+// SetAttrs initializes this value as an attribute set. All values must belong
+// to the same evaluator state as the receiver.
+func (v *Value) SetAttrs(attrs map[string]*Value) error {
+	if err := v.ensureOpen(); err != nil {
+		return err
+	}
+	for name, elem := range attrs {
+		if elem == nil || elem.c == nil || elem.c.Ptr() == nil {
+			return fmt.Errorf("nix: attribute %q has a nil or closed value", name)
+		}
+		if elem.state != v.state {
+			return fmt.Errorf("nix: attribute %q belongs to a different evaluator state", name)
+		}
+	}
+	builder := cvalue.MakeBindingsBuilder(v.ctx.Internal(), v.state, uint(len(attrs)))
+	if builder == nil {
+		if err := v.ctx.Err(); err != nil {
+			return err
+		}
+		return fmt.Errorf("nix: failed to allocate attribute bindings builder")
+	}
+	defer builder.Free()
+	for name, elem := range attrs {
+		if err := v.ctx.Check(util.ErrorCode(builder.Insert(v.ctx.Internal(), name, elem.c))); err != nil {
+			return err
+		}
+	}
+	return v.ctx.Check(util.ErrorCode(v.c.MakeAttrs(v.ctx.Internal(), builder)))
+}
+
 // NewList builds a list value from elements.
 func NewList(ctx *util.Context, state *cexpr.EvalState, elems []*Value) (*Value, error) {
 	if ctx == nil || state == nil {
