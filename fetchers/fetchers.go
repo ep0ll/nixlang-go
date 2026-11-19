@@ -15,6 +15,9 @@ type Settings struct {
 
 // New creates default fetcher settings.
 func New(ctx *util.Context) (*Settings, error) {
+	if ctx == nil || ctx.Internal() == nil {
+		return nil, fmt.Errorf("nix: context is required")
+	}
 	s := cfetch.New(ctx.Internal())
 	if s == nil {
 		if err := ctx.Err(); err != nil {
