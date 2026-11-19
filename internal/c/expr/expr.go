@@ -3,6 +3,7 @@ package expr
 
 /*
 #cgo pkg-config: nix-expr-c nix-store-c nix-util-c
+#cgo CXXFLAGS: -std=c++23
 #include <nix_api_expr.h>
 #include <nix_api_store.h>
 #include <nix_api_util.h>
