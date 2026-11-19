@@ -118,8 +118,11 @@ func RegisterPrimOp(
 // separate from RegisterPrimOp: registration exposes a builtin through the
 // global builtins attrset for subsequently created evaluator states.
 func (v *Value) SetPrimOp(primop *PrimOp) error {
-	if v == nil || v.c == nil || primop == nil || primop.c == nil {
-		return fmt.Errorf("nix: value and primop are required")
+	if err := v.ensureOpen(); err != nil {
+		return err
+	}
+	if primop == nil || primop.c == nil {
+		return fmt.Errorf("nix: primop is required")
 	}
 	return v.ctx.Check(util.ErrorCode(v.c.InitPrimOp(v.ctx.Internal(), primop.c)))
 }
