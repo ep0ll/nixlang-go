@@ -9,8 +9,9 @@ import (
 )
 
 // Function is an independently retained, checked Nix function value from the
-// same evaluator as Builtins. Create it with NewFunction and close it when the
-// higher-order calls that use it are complete.
+// same evaluator as Builtins. Create it with NewFunction and close it only
+// after higher-order calls and any lazy results that may reference the function
+// have been fully consumed.
 type Function struct {
 	value *value.Value
 }
