@@ -15,7 +15,7 @@ func cgoExprGCFinalizer(obj unsafe.Pointer, userdata unsafe.Pointer) {
 	if userdata == nil {
 		return
 	}
-	id := uintptr(C.nixgo_expr_userdata_to_id(userdata))
+	id := uintptr(C.nixgo_expr_userdata_take_id(userdata))
 	gcFinalizerMu.Lock()
 	fn := gcFinalizers[id]
 	delete(gcFinalizers, id)
