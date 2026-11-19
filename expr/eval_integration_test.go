@@ -5,7 +5,6 @@ package expr_test
 import (
 	"strings"
 	"testing"
-	"unsafe"
 
 	"github.com/ep0ll/nixlang-go/expr"
 	"github.com/ep0ll/nixlang-go/store"
@@ -230,7 +229,7 @@ func TestPrimOpValueLifetime(t *testing.T) {
 
 	primop, err := value.NewPrimOp(
 		ctx,
-		func(_ any, _ *util.Context, _ unsafe.Pointer, args []*value.Value, result *value.Value) error {
+		func(_ any, _ *util.Context, _ *value.PrimOpState, args []*value.Value, result *value.Value) error {
 			n, err := args[0].Int()
 			if err != nil {
 				return err
