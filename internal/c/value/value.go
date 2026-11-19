@@ -120,7 +120,7 @@ func (v *Value) Incref(ctx *cutil.Context) cutil.Err {
 	return cutil.FromCErr(err)
 }
 
-// Decref decrements the GC refcount. Idempotent; safe with concurrent finalizer.
+// Decref releases one owned GC reference. Closed and borrowed wrappers are safe to close.
 func (v *Value) Decref() {
 	if v == nil {
 		return
@@ -287,9 +287,21 @@ func (v *Value) InitExternal(ctx *cutil.Context, external unsafe.Pointer) cutil.
 
 // Retain creates an independently-owned reference to this value.
 func (v *Value) Retain(ctx *cutil.Context) (*Value, cutil.Err) {
-	if v == nil || v.ptr == nil { return nil, cutil.ErrUnknown }
-	if err := C.nix_value_incref(ctx.Ptr(), v.ptr); err != C.NIX_OK { return nil, cutil.FromCErr(err) }
-	return WrapPtr(unsafe.Pointer(v.ptr)), cutil.OK
+	if v == nil {
+		return nil, cutil.ErrUnknown
+	}
+	v.mu.Lock()
+	if v.ptr == nil {
+		v.mu.Unlock()
+		return nil, cutil.ErrUnknown
+	}
+	ptr := v.ptr
+	err := C.nix_value_incref(ctx.Ptr(), ptr)
+	v.mu.Unlock()
+	if err != C.NIX_OK {
+		return nil, cutil.FromCErr(err)
+	}
+	return WrapPtr(unsafe.Pointer(ptr)), cutil.OK
 }
 
 // InitNull initializes to null.
