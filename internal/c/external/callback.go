@@ -6,6 +6,8 @@ package external
 #include <nix_api_external.h>
 #include <nix_api_expr.h>
 #include <nix_api_util.h>
+#include <stdlib.h>
+#include "bridge.h"
 */
 import "C"
 import (
