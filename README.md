@@ -92,6 +92,13 @@ interface. You pass Go values, and the package converts them into evaluator
 values before calling the actual builtin.
 
 ```go
+import (
+    "crypto"
+    "net/url"
+
+    "github.com/ep0ll/nixlang-go/builtins"
+)
+
 b, err := builtins.New(state)
 if err != nil {
     return err
@@ -99,7 +106,7 @@ if err != nil {
 defer b.Close()
 
 // Generated, arity-specific Go wrapper.
-sum, err := b.Add(20, 22)
+sum, err := b.Add(builtins.Integer(20), builtins.Integer(22))
 if err != nil {
     return err
 }
@@ -152,14 +159,31 @@ example, `HashFile(algorithm string, path any)` accepts either a Nix path or a
 string path).
 
 ```go
-// A string algorithm plus a Nix path or string path.
-hash, err := b.HashFile("sha256", builtins.Path("./LICENSE"))
+// The hash algorithm uses Go standard-library crypto.Hash constants.
+hash, err := b.HashFile(crypto.SHA256, builtins.Path("./LICENSE"))
 
 // A Nix attribute set represented by a typed Go struct.
 converted, err := b.ConvertHash(builtins.ConvertHashArgs{
     Hash:         "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    HashAlgo:     "sha256",
-    ToHashFormat: "sri",
+    HashAlgo:     crypto.SHA256,
+    ToHashFormat: builtins.HashFormatSRI,
+})
+
+
+// Typed Go inputs for unions and structured fetchers.
+u, err := url.Parse("https://github.com/NixOS/nixpkgs")
+if err != nil {
+    return err
+}
+gitSource, err := b.FetchGit(builtins.FetchGitArgs{URL: u, Rev: "locked-revision"})
+if err != nil {
+    return err
+}
+defer gitSource.Close()
+
+joined, err := b.ConcatStringsSep("/", []builtins.StringCoercible{
+    builtins.StringValue("usr"),
+    builtins.StringValue("local"),
 })
 
 // Higher-order functions take checked Nix function handles.
@@ -171,9 +195,17 @@ mapped, err := b.Map(fn, []any{1, 2, 3})
 // Structured path arguments, including a Nix function predicate.
 path, err := b.Path(builtins.PathArgs{
     Path:   builtins.Path("./source"),
-    Filter: fn,
+    Filter: &fn,
 })
 ```
+
+For URL-bearing options the API uses `net/url.URL`; Nix hash algorithms reuse
+`crypto.Hash` (`crypto.MD5`, `crypto.SHA1`, `crypto.SHA256`, and
+`crypto.SHA512`), while Nix-specific hash encodings use the `HashFormat` enum.
+`Path` is a distinct Nix path value; `FilePath` uses `path/filepath` to
+normalize an OS path before creating one, and `StringPath` represents a path
+passed as a Nix string. `Number`, `HashFormat`, and `FlakeRefType` use explicit
+Go types/constants rather than untyped string conventions.
 
 The exported `builtins.Registry()` also records each Nix parameter name and
 its generated Go parameter type in `Spec.Args` and `Spec.GoTypes`. Dynamic
