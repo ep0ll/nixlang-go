@@ -524,7 +524,7 @@ func (b *Builtins) TypeOf(expr any) (*value.Value, error) {
 }
 
 // UnsafeDiscardOutputDependency calls builtins.unsafeDiscardOutputDependency.
-func (b *Builtins) UnsafeDiscardOutputDependency(input string) (*value.Value, error) {
+func (b *Builtins) UnsafeDiscardOutputDependency(input any) (*value.Value, error) {
 	return b.Call("unsafeDiscardOutputDependency", input)
 }
 
