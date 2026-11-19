@@ -198,8 +198,8 @@ func TakeStringSlot(p unsafe.Pointer) *string {
 	strMu.Lock()
 	defer strMu.Unlock()
 	key := uintptr(p)
-	s := strSlots[key]
-	if s != nil {
+	s, ok := strSlots[key]
+	if ok {
 		delete(strSlots, key)
 		C.nixgo_util_userdata_free(p)
 	}
