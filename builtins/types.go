@@ -3,10 +3,89 @@
 package builtins
 
 import (
+	"crypto"
 	"fmt"
+	"net/url"
+	"path/filepath"
 
 	"github.com/ep0ll/nixlang-go/value"
 )
+
+
+// PathLike is the closed union of Nix path values and plain string paths.
+// Use FilePath for a Nix path value and StringPath for a Nix string containing
+// a path. Nix distinguishes these two value kinds.
+type PathLike interface {
+	nixPathLike() any
+}
+
+// StringPath represents a path written as a Nix string, rather than a Nix path
+// literal.
+type StringPath string
+
+func (p StringPath) nixPathLike() any { return string(p) }
+
+// FilePath constructs a Nix Path from an operating-system path. filepath.Clean
+// and filepath.ToSlash normalize host path syntax before it is passed to Nix.
+func FilePath(path string) Path {
+	return Path(filepath.ToSlash(filepath.Clean(path)))
+}
+
+// HashAlgorithm uses Go's standard crypto.Hash identifiers while exposing
+// only the algorithms supported by Nix's hash builtins.
+type HashAlgorithm = crypto.Hash
+
+const (
+	HashMD5    = crypto.MD5
+	HashSHA1   = crypto.SHA1
+	HashSHA256 = crypto.SHA256
+	HashSHA512 = crypto.SHA512
+)
+
+func hashAlgorithmName(algorithm crypto.Hash) (string, error) {
+	switch algorithm {
+	case crypto.MD5:
+		return "md5", nil
+	case crypto.SHA1:
+		return "sha1", nil
+	case crypto.SHA256:
+		return "sha256", nil
+	case crypto.SHA512:
+		return "sha512", nil
+	default:
+		return "", fmt.Errorf("unsupported Nix hash algorithm %v", algorithm)
+	}
+}
+
+// HashFormat identifies the textual representation accepted by
+// builtins.convertHash.
+type HashFormat uint8
+
+const (
+	HashFormatInvalid HashFormat = iota
+	HashFormatBase16
+	HashFormatBase32
+	HashFormatBase64
+	HashFormatSRI
+)
+
+func (f HashFormat) nixString() string {
+	switch f {
+	case HashFormatBase16:
+		return "base16"
+	case HashFormatBase32:
+		return "base32"
+	case HashFormatBase64:
+		return "base64"
+	case HashFormatSRI:
+		return "sri"
+	default:
+		return ""
+	}
+}
+
+// StorePath is a canonical Nix store path, not an arbitrary filesystem path.
+type StorePath string
 
 // Function is an independently retained, checked Nix function value from the
 // same evaluator as Builtins. Create it with NewFunction and close it only
@@ -163,13 +242,13 @@ type ConvertHashArgs struct {
 func (a ConvertHashArgs) ToNixAttrs() AttrSet {
 	attrs := cloneAttrs(a.Extra)
 	attrs["hash"] = a.Hash
-	attrs["toHashFormat"] = a.ToHashFormat
-	if a.HashAlgo != HashAlgorithmInvalid {
-		attrs["hashAlgo"] = a.HashAlgo.nixString()
+	if a.HashAlgo != 0 {
+		algorithm, err := hashAlgorithmName(a.HashAlgo)
+		if err == nil {
+			attrs["hashAlgo"] = algorithm
+		}
 	}
-	if a.ToHashFormat != HashFormatInvalid {
-		attrs["toHashFormat"] = a.ToHashFormat.nixString()
-	}
+	attrs["toHashFormat"] = a.ToHashFormat.nixString()
 	return attrs
 }
 
@@ -190,15 +269,15 @@ func (a GenericClosureArgs) ToNixAttrs() AttrSet {
 // FetchClosureArgs describes the structured form of builtins.fetchClosure.
 type FetchClosureArgs struct {
 	FromPath       StorePath
-	FromStore      string
+	FromStore      url.URL
 	ToPath         *StorePath
 	InputAddressed *bool
 }
 
 func (a FetchClosureArgs) ToNixAttrs() AttrSet {
 	attrs := AttrSet{"fromPath": string(a.FromPath)}
-	if a.FromStore != "" {
-		attrs["fromStore"] = a.FromStore
+	if a.FromStore.String() != "" {
+		attrs["fromStore"] = a.FromStore.String()
 	}
 	if a.ToPath != nil {
 		attrs["toPath"] = string(*a.ToPath)
@@ -211,23 +290,32 @@ func (a FetchClosureArgs) ToNixAttrs() AttrSet {
 
 // FetchURLArgs describes the attribute-set form of builtins.fetchurl.
 type FetchURLArgs struct {
-	URL   string
-	Name  string
-	Extra AttrSet
+	URL    url.URL
+	Name   string
+	SHA256 string
+	Extra  AttrSet
 }
 
 func (a FetchURLArgs) ToNixAttrs() AttrSet {
 	attrs := cloneAttrs(a.Extra)
-	attrs["url"] = a.URL
+	if a.URL != nil {
+		attrs["url"] = *a.URL
+	}
+	if a.Path != nil {
+		attrs["url"] = *a.Path
+	}
 	if a.Name != "" {
 		attrs["name"] = a.Name
+	}
+	if a.SHA256 != "" {
+		attrs["sha256"] = a.SHA256
 	}
 	return attrs
 }
 
 // FetchTarballArgs describes the attribute-set form of builtins.fetchTarball.
 type FetchTarballArgs struct {
-	URL    string
+	URL    url.URL
 	SHA256 string
 	Name   string
 	Extra  AttrSet
@@ -247,7 +335,8 @@ func (a FetchTarballArgs) ToNixAttrs() AttrSet {
 
 // FetchGitArgs describes the attribute-set form of builtins.fetchGit.
 type FetchGitArgs struct {
-	URL          PathLike
+	URL          *url.URL
+	Path         *Path
 	Name         string
 	Rev          string
 	Ref          string
@@ -260,7 +349,12 @@ type FetchGitArgs struct {
 
 func (a FetchGitArgs) ToNixAttrs() AttrSet {
 	attrs := cloneAttrs(a.Extra)
-	attrs["url"] = a.URL
+	if a.URL != nil {
+		attrs["url"] = *a.URL
+	}
+	if a.Path != nil {
+		attrs["url"] = *a.Path
+	}
 	if a.Name != "" {
 		attrs["name"] = a.Name
 	}
@@ -287,7 +381,8 @@ func (a FetchGitArgs) ToNixAttrs() AttrSet {
 
 // FetchMercurialArgs describes the attribute-set form of builtins.fetchMercurial.
 type FetchMercurialArgs struct {
-	URL   PathLike
+	URL   *url.URL
+	Path  *Path
 	Name  string
 	Rev   string
 	Extra AttrSet
@@ -311,8 +406,8 @@ func (a FetchMercurialArgs) ToNixAttrs() AttrSet {
 // input attributes not represented by the common fields.
 type FetchTreeArgs struct {
 	Type         string
-	URL          PathLike
-	Path         PathLike
+	URL          *url.URL
+	Path         *Path
 	Rev          string
 	Ref          string
 	NarHash      string
@@ -330,10 +425,10 @@ func (a FetchTreeArgs) ToNixAttrs() AttrSet {
 		attrs["type"] = a.Type
 	}
 	if a.URL != nil {
-		attrs["url"] = a.URL
+		attrs["url"] = *a.URL
 	}
 	if a.Path != nil {
-		attrs["path"] = a.Path
+		attrs["path"] = *a.Path
 	}
 	if a.Rev != "" {
 		attrs["rev"] = a.Rev
