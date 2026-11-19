@@ -134,6 +134,44 @@ arity and experimental-feature gates. Runtime availability can differ when a
 builtin is feature-gated, platform-dependent, or when the linked Nix version
 differs from 2.35.6.
 
+The generated methods use statically typed Go parameters wherever the
+Nix argument has a clear shape: strings use `string`, integer operands use
+`int64`, function operands use `builtins.Function`, and structured Nix
+attribute sets use named Go structs such as `PathArgs`, `FetchClosureArgs`,
+`ConvertHashArgs`, `DerivationAttrs`, and `FlakeRefAttrs`. Lists with a
+known element type use typed slices, for example `[]string` and
+`[]SearchPathEntry`. A parameter is `any` only when Nix itself accepts
+multiple distinct Nix value types or an arbitrary expression value (for
+example, `HashFile(algorithm string, path any)` accepts either a Nix path or a
+string path).
+
+```go
+// A string algorithm plus a Nix path or string path.
+hash, err := b.HashFile("sha256", builtins.Path("./LICENSE"))
+
+// A Nix attribute set represented by a typed Go struct.
+converted, err := b.ConvertHash(builtins.ConvertHashArgs{
+    Hash:         "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    HashAlgo:     "sha256",
+    ToHashFormat: "sri",
+})
+
+// Higher-order functions take Nix functions, not untyped callback pointers.
+fn, err := state.EvalString("x: x + 1", ".")
+mapped, err := b.Map(fn, []int{1, 2, 3})
+
+// Structured path arguments, including a Nix function predicate.
+path, err := b.Path(builtins.PathArgs{
+    Path:   builtins.Path("./source"),
+    Filter: fn,
+})
+```
+
+The exported `builtins.Registry()` also records each Nix parameter name and
+its generated Go parameter type in `Spec.Args` and `Spec.GoTypes`. Dynamic
+`Builtins.Call` remains available for plugin-defined or otherwise unusual
+calls, while the generated methods provide the statically typed API.
+
 The catalog includes core `libexpr` primops, string-context and fetcher
 primops, and the three flake primops (`getFlake`, `parseFlakeRef`, and
 `flakeRefToString`). Flake primops are only available when flake settings
