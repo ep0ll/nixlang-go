@@ -99,11 +99,15 @@ func TestExistingNixFunctionArgument(t *testing.T) {
 	}
 	t.Cleanup(b.Close)
 
-	fn, err := state.EvalString("x: x + 1", ".")
+	fnValue, err := state.EvalString("x: x + 1", ".")
 	if err != nil {
 		t.Fatalf("EvalString: %v", err)
 	}
-	t.Cleanup(fn.Close)
+	t.Cleanup(fnValue.Close)
+	fn, err := nixbuiltins.NewFunction(fnValue)
+	if err != nil {
+		t.Fatalf("NewFunction: %v", err)
+	}
 
 	mapped, err := b.Map(fn, []int{1, 2, 3})
 	if err != nil {
