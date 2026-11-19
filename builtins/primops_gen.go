@@ -39,8 +39,8 @@ func (b *Builtins) Any(predicate Function, list any) (*value.Value, error) {
 }
 
 // AppendContext calls builtins.appendContext.
-func (b *Builtins) AppendContext(string string, context StringContext) (*value.Value, error) {
-	return b.Call("appendContext", string, context)
+func (b *Builtins) AppendContext(original string, context StringContext) (*value.Value, error) {
+	return b.Call("appendContext", original, context)
 }
 
 // AttrNames calls builtins.attrNames.
