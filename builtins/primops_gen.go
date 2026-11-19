@@ -14,7 +14,7 @@ func (b *Builtins) AddDrvOutputDependencies(input any) (*value.Value, error) {
 }
 
 // AddErrorContext calls builtins.addErrorContext.
-func (b *Builtins) AddErrorContext(context string, value any) (*value.Value, error) {
+func (b *Builtins) AddErrorContext(context any, value any) (*value.Value, error) {
 	return b.Call("addErrorContext", context, value)
 }
 
@@ -104,7 +104,7 @@ func (b *Builtins) ConcatMap(function Function, list []any) (*value.Value, error
 }
 
 // ConcatStringsSep calls builtins.concatStringsSep.
-func (b *Builtins) ConcatStringsSep(separator string, strings []string) (*value.Value, error) {
+func (b *Builtins) ConcatStringsSep(separator string, strings []any) (*value.Value, error) {
 	return b.Call("concatStringsSep", separator, strings)
 }
 
@@ -539,7 +539,7 @@ func (b *Builtins) UnsafeGetAttrPos(name string, set AttrSet) (*value.Value, err
 }
 
 // Warn calls builtins.warn.
-func (b *Builtins) Warn(message any, value any) (*value.Value, error) {
+func (b *Builtins) Warn(message string, value any) (*value.Value, error) {
 	return b.Call("warn", message, value)
 }
 
