@@ -86,6 +86,7 @@ func TestRealiseOutputLocalFlake(t *testing.T) {
 	      builder = "/bin/sh";
 	      args = [ "-c" "mkdir -p $out; echo nixgo > $out/result" ];
 	    };
+	    checks.${builtins.currentSystem}.notDerivation = "not a derivation";
 	  };
 	}`
 	if err := os.WriteFile(filepath.Join(dir, "flake.nix"), []byte(flakeNix), 0600); err != nil {
@@ -161,6 +162,9 @@ func TestRealiseOutputLocalFlake(t *testing.T) {
 	}
 	if !st.IsValid(outputs["out"]) {
 		t.Fatal("realised output is not valid in the store")
+	}
+	if _, err := locked.RealiseOutput(ctx, settings, state, st, []string{"checks", stateSystem(t, state), "notDerivation"}); err == nil {
+		t.Fatal("expected non-derivation flake output to be rejected")
 	}
 }
 
