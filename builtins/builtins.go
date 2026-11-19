@@ -209,7 +209,7 @@ func (b *Builtins) fromGo(input any) (*value.Value, bool, error) {
 		return nil, false, err
 	}
 
-	switch input.(type) {
+	switch x := input.(type) {
 	case nil:
 		err = out.SetNull()
 	case Path:
