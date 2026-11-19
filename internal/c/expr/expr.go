@@ -46,11 +46,17 @@ func NewBuilder(ctx *cutil.Context, store *cstore.Store) *Builder {
 
 // Load reads ambient configuration into the builder.
 func (b *Builder) Load(ctx *cutil.Context) cutil.Err {
+	if b == nil || b.ptr == nil {
+		return cutil.ErrUnknown
+	}
 	return cutil.FromCErr(C.nix_eval_state_builder_load(ctx.Ptr(), b.ptr))
 }
 
 // SetLookupPath sets NIX_PATH-like lookup paths.
 func (b *Builder) SetLookupPath(ctx *cutil.Context, paths []string) cutil.Err {
+	if b == nil || b.ptr == nil {
+		return cutil.ErrUnknown
+	}
 	cpaths := make([]*C.char, len(paths)+1)
 	for i, p := range paths {
 		cpaths[i] = C.CString(p)
@@ -66,6 +72,9 @@ func (b *Builder) SetLookupPath(ctx *cutil.Context, paths []string) cutil.Err {
 
 // SetSetting sets an evaluator setting on the builder.
 func (b *Builder) SetSetting(ctx *cutil.Context, key, value string) cutil.Err {
+	if b == nil || b.ptr == nil {
+		return cutil.ErrUnknown
+	}
 	ck := C.CString(key)
 	cv := C.CString(value)
 	defer C.free(unsafe.Pointer(ck))
@@ -83,6 +92,9 @@ func (b *Builder) Ptr() *C.nix_eval_state_builder {
 
 // Build creates an EvalState.
 func (b *Builder) Build(ctx *cutil.Context) *EvalState {
+	if b == nil || b.ptr == nil {
+		return nil
+	}
 	p := C.nix_eval_state_build(ctx.Ptr(), b.ptr)
 	if p == nil {
 		return nil
@@ -103,6 +115,9 @@ func (b *Builder) Free() {
 
 // Create is a convenience wrapper around builder defaults.
 func Create(ctx *cutil.Context, lookupPath []string, store *cstore.Store) *EvalState {
+	if store == nil || store.Ptr() == nil {
+		return nil
+	}
 	cpaths := make([]*C.char, len(lookupPath)+1)
 	for i, p := range lookupPath {
 		cpaths[i] = C.CString(p)
@@ -152,6 +167,9 @@ func (s *EvalState) Ptr() *C.EvalState {
 
 // EvalFromString parses and evaluates expr.
 func EvalFromString(ctx *cutil.Context, state *EvalState, expr, path string, value unsafe.Pointer) cutil.Err {
+	if state == nil || state.ptr == nil || value == nil {
+		return cutil.ErrUnknown
+	}
 	ce := C.CString(expr)
 	cp := C.CString(path)
 	defer C.free(unsafe.Pointer(ce))
@@ -163,6 +181,9 @@ func EvalFromString(ctx *cutil.Context, state *EvalState, expr, path string, val
 
 // ValueCall applies fn to arg.
 func ValueCall(ctx *cutil.Context, state *EvalState, fn, arg, value unsafe.Pointer) cutil.Err {
+	if state == nil || state.ptr == nil || fn == nil || arg == nil || value == nil {
+		return cutil.ErrUnknown
+	}
 	return cutil.FromCErr(C.nix_value_call(
 		ctx.Ptr(), state.ptr,
 		(*C.nix_value)(fn), (*C.nix_value)(arg), (*C.nix_value)(value),
@@ -171,26 +192,42 @@ func ValueCall(ctx *cutil.Context, state *EvalState, fn, arg, value unsafe.Point
 
 // ValueCallMulti applies a curried function to multiple arguments.
 func ValueCallMulti(ctx *cutil.Context, state *EvalState, fn unsafe.Pointer, args []unsafe.Pointer, value unsafe.Pointer) cutil.Err {
-	if len(args) == 0 {
-		return cutil.OK
+	if state == nil || state.ptr == nil || fn == nil || value == nil {
+		return cutil.ErrUnknown
 	}
-	cargs := make([]*C.nix_value, len(args))
-	for i, a := range args {
-		cargs[i] = (*C.nix_value)(a)
+	var argv **C.nix_value
+	if len(args) > 0 {
+		cargs := make([]*C.nix_value, len(args))
+		for i, arg := range args {
+			if arg == nil {
+				return cutil.ErrUnknown
+			}
+			cargs[i] = (*C.nix_value)(arg)
+		}
+		argv = &cargs[0]
+		return cutil.FromCErr(C.nix_value_call_multi(
+			ctx.Ptr(), state.ptr, (*C.nix_value)(fn),
+			C.size_t(len(cargs)), argv, (*C.nix_value)(value),
+		))
 	}
 	return cutil.FromCErr(C.nix_value_call_multi(
-		ctx.Ptr(), state.ptr, (*C.nix_value)(fn),
-		C.size_t(len(args)), &cargs[0], (*C.nix_value)(value),
+		ctx.Ptr(), state.ptr, (*C.nix_value)(fn), 0, nil, (*C.nix_value)(value),
 	))
 }
 
 // ValueForce forces evaluation of a thunk.
 func ValueForce(ctx *cutil.Context, state *EvalState, value unsafe.Pointer) cutil.Err {
+	if state == nil || state.ptr == nil || value == nil {
+		return cutil.ErrUnknown
+	}
 	return cutil.FromCErr(C.nix_value_force(ctx.Ptr(), state.ptr, (*C.nix_value)(value)))
 }
 
 // ValueForceDeep deeply forces a value.
 func ValueForceDeep(ctx *cutil.Context, state *EvalState, value unsafe.Pointer) cutil.Err {
+	if state == nil || state.ptr == nil || value == nil {
+		return cutil.ErrUnknown
+	}
 	return cutil.FromCErr(C.nix_value_force_deep(ctx.Ptr(), state.ptr, (*C.nix_value)(value)))
 }
 
