@@ -25,6 +25,8 @@ var registry = []Spec{
     {Name: "add", Arity: 2},
     {Name: "addDrvOutputDependencies", Arity: 1},
     {Name: "addErrorContext", Arity: 2},
+    {Name: "abort", Arity: 1},
+    {Name: "throw", Arity: 1},
     {Name: "all", Arity: 2},
     {Name: "any", Arity: 2},
     {Name: "appendContext", Arity: 2},
