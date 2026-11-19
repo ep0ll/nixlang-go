@@ -8,8 +8,10 @@ func (ctx *Context) ErrorInfoMessage() (string, error) {
 	if ctx == nil || ctx.c == nil {
 		return "", nil
 	}
-	message, code := cutil.ErrorInfoMsg(ctx.c, ctx.c)
-	if err := ctx.Check(ErrorCode(code)); err != nil {
+	scratch := cutil.NewContext()
+	defer scratch.Free()
+	message, code := cutil.ErrorInfoMsg(scratch, ctx.c)
+	if err := (&Context{c: scratch}).Check(ErrorCode(code)); err != nil {
 		return "", err
 	}
 	return message, nil
@@ -21,8 +23,10 @@ func (ctx *Context) ErrorName() (string, error) {
 	if ctx == nil || ctx.c == nil {
 		return "", nil
 	}
-	name, code := cutil.ErrorName(ctx.c, ctx.c)
-	if err := ctx.Check(ErrorCode(code)); err != nil {
+	scratch := cutil.NewContext()
+	defer scratch.Free()
+	name, code := cutil.ErrorName(scratch, ctx.c)
+	if err := (&Context{c: scratch}).Check(ErrorCode(code)); err != nil {
 		return "", err
 	}
 	return name, nil
