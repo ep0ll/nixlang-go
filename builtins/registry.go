@@ -107,7 +107,7 @@ var registry = []Spec{
 	{Name: "mul", Arity: 2, Args: []string{"e1", "e2"}, GoTypes: []string{"any", "any"}},
 	{Name: "outputOf", Arity: 2, Args: []string{"derivation-reference", "output-name"}, GoTypes: []string{"string", "string"}, ExperimentalFeature: "dynamic-derivations"},
 	{Name: "parseDrvName", Arity: 1, Args: []string{"s"}, GoTypes: []string{"string"}},
-	{Name: "parseFlakeRef", Arity: 1, Args: []string{"arg1"}, GoTypes: []string{"string"}, ExperimentalFeature: "flakes"},
+	{Name: "parseFlakeRef", Arity: 1, Args: []string{"flake-ref"}, GoTypes: []string{"string"}, ExperimentalFeature: "flakes"},
 	{Name: "partition", Arity: 2, Args: []string{"pred", "list"}, GoTypes: []string{"Function", "any"}},
 	{Name: "path", Arity: 1, Args: []string{"args"}, GoTypes: []string{"PathArgs"}},
 	{Name: "pathExists", Arity: 1, Args: []string{"path"}, GoTypes: []string{"any"}},
@@ -142,6 +142,6 @@ var registry = []Spec{
 	{Name: "warn", Arity: 2, Args: []string{"e1", "e2"}, GoTypes: []string{"any", "any"}},
 	{Name: "zipAttrsWith", Arity: 2, Args: []string{"f", "list"}, GoTypes: []string{"Function", "any"}},
 	{Name: "fetchurl", Arity: 1, Args: []string{"arg"}, GoTypes: []string{"any"}},
-	{Name: "flakeRefToString", Arity: 1, Args: []string{"arg1"}, GoTypes: []string{"FlakeRefAttrs"}, ExperimentalFeature: "flakes"},
+	{Name: "flakeRefToString", Arity: 1, Args: []string{"attrs"}, GoTypes: []string{"FlakeRefAttrs"}, ExperimentalFeature: "flakes"},
 	{Name: "derivation", Arity: 1, Args: []string{"attrs"}, GoTypes: []string{"DerivationAttrs"}},
 }
