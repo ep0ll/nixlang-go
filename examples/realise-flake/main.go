@@ -2,8 +2,9 @@
 // Nix C API, without invoking the Nix CLI.
 //
 // Usage (inside nix develop):
-//   go run -tags nix ./examples/realise-flake path:./. packages x86_64-linux default
-//   go run -tags nix ./examples/realise-flake github:NixOS/nixpkgs#hello packages x86_64-linux hello
+//
+//	go run -tags nix ./examples/realise-flake path:./. packages x86_64-linux default
+//	go run -tags nix ./examples/realise-flake github:NixOS/nixpkgs#hello packages x86_64-linux hello
 package main
 
 import (

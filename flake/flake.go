@@ -257,7 +257,6 @@ func (lf *LockedFlake) OutputAttrs(ctx *util.Context, settings *Settings, state 
 	return value.FromInternal(ctx, state.Internal(), cv), nil
 }
 
-
 // RealiseOutput evaluates a selected flake output attribute path, verifies that
 // it is a derivation, and realises its derivation path through the supplied
 // store. The returned output paths are owned by the caller and must be closed.
