@@ -57,6 +57,8 @@ type ListBuilder struct {
 // BindingsBuilder wraps BindingsBuilder.
 type BindingsBuilder struct {
 	ptr      *C.BindingsBuilder
+	capacity uint
+	inserted map[string]struct{}
 	consumed bool
 }
 
@@ -455,7 +457,7 @@ func MakeBindingsBuilder(ctx *cutil.Context, state *cexpr.EvalState, capacity ui
 	if p == nil {
 		return nil
 	}
-	b := &BindingsBuilder{ptr: p}
+	b := &BindingsBuilder{ptr: p, capacity: capacity, inserted: make(map[string]struct{})}
 	runtime.SetFinalizer(b, func(b *BindingsBuilder) { b.Free() })
 	return b
 }
@@ -465,9 +467,16 @@ func (b *BindingsBuilder) Insert(ctx *cutil.Context, name string, v *Value) cuti
 	if b == nil || b.ptr == nil || b.consumed || ctx == nil || v == nil || v.ptr == nil {
 		return cutil.ErrUnknown
 	}
+	if _, exists := b.inserted[name]; !exists && uint(len(b.inserted)) >= b.capacity {
+		return cutil.ErrOverflow
+	}
 	cn := C.CString(name)
 	defer C.free(unsafe.Pointer(cn))
-	return cutil.FromCErr(C.nix_bindings_builder_insert(ctx.Ptr(), b.ptr, cn, v.ptr))
+	err := cutil.FromCErr(C.nix_bindings_builder_insert(ctx.Ptr(), b.ptr, cn, v.ptr))
+	if err == cutil.OK {
+		b.inserted[name] = struct{}{}
+	}
+	return err
 }
 
 // Free frees the bindings builder.
