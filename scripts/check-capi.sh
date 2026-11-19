@@ -27,7 +27,7 @@ fi
 
 mapfile -t header_paths < <(
   for dir in "${include_dirs[@]}"; do
-    find "$dir" -type f \\( -name 'nix_api*.h' -o -path '*/nix_api_store/*.h' \\) ! -name '*_internal.h' -print
+    find "$dir" -type f \( -name 'nix_api*.h' -o -path '*/nix_api_store/*.h' \) ! -name '*_internal.h' -print
   done | sort -u
 )
 if [ "${#header_paths[@]}" -eq 0 ]; then
@@ -44,7 +44,7 @@ for header in "${header_paths[@]}"; do
   while IFS= read -r symbol; do
     [ -z "$symbol" ] && continue
     if ! grep -R --include='*.go' -F -q "C.$symbol" internal/c &&
-       ! grep -R -E --include='*.c' --include='*.cc' --include='*.cpp' -q "\\b$symbol[[:space:]]*\\(" internal/c; then
+       ! grep -R -E --include='*.c' --include='*.cc' --include='*.cpp' -q "\b$symbol[[:space:]]*\(" internal/c; then
       echo "  MISSING binding: $symbol ($header)"
       missing=1
     fi
