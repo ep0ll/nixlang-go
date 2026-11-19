@@ -57,6 +57,12 @@ func TestTypedArgumentStructs(t *testing.T) {
 		t.Fatalf("StringContext outputs = %#v", entry["outputs"])
 	}
 
+	contextAttrs := context.ToNixAttrs()
+	convertedEntry, ok := contextAttrs["/nix/store/example"].(builtins.AttrSet)
+	if !ok || convertedEntry["path"] != true {
+		t.Fatalf("StringContext conversion = %#v", contextAttrs)
+	}
+
 	derivation := builtins.DerivationAttrs{
 		Name:   "example",
 		System: "x86_64-linux",
