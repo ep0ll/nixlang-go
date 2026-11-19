@@ -10,7 +10,7 @@ type Function = *value.Value
 
 // AttrSet is a Nix attribute set whose values are recursively converted from
 // Go values. Use it for Nix APIs whose attribute names are open-ended.
-type AttrSet map[string]any
+type AttrSet = map[string]any
 
 // AttrConvertible is implemented by the typed option structs in this package.
 // The returned AttrSet is converted recursively using the same Go-to-Nix rules
