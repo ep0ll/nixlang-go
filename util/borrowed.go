@@ -8,5 +8,5 @@ func WrapInternal(ctx *cutil.Context) *Context {
 	if ctx == nil {
 		return nil
 	}
-	return &Context{c: ctx}
+	return &Context{c: ctx, owned: false}
 }
