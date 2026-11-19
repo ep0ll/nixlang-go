@@ -7,6 +7,8 @@ package expr
 #include <nix_api_store.h>
 #include <nix_api_value.h>
 #include <nix_api_util.h>
+#include <stdint.h>
+#include "bridge.h"
 
 typedef void (*nixgo_gc_finalizer_callback)(void *, void *);
 extern void cgoExprGCFinalizer(void *, void *);
@@ -45,7 +47,7 @@ func RegisterGCFinalizer(obj unsafe.Pointer, fn func(unsafe.Pointer)) {
 	gcFinalizers[id] = fn
 	gcFinalizerObjects[objectID] = id
 	gcFinalizerMu.Unlock()
-	C.nix_gc_register_finalizer(obj, unsafe.Pointer(id),
+	C.nix_gc_register_finalizer(obj, unsafe.Pointer(C.nixgo_expr_id_to_userdata(C.uintptr_t(id))),
 		C.nixgo_gc_finalizer_callback(C.cgoExprGCFinalizer))
 }
 
