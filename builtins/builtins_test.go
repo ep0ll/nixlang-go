@@ -215,7 +215,7 @@ func TestStaticallyTypedBuiltinArguments(t *testing.T) {
 		t.Fatalf("ConvertHash result = %q; want SRI sha256 hash", convertedString)
 	}
 
-	joined, err := b.ConcatStringsSep("/", []string{"usr", "local", "bin"})
+	joined, err := b.ConcatStringsSep("/", []any{"usr", "local", "bin"})
 	if err != nil {
 		t.Fatalf("ConcatStringsSep: %v", err)
 	}
