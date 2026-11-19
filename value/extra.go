@@ -62,7 +62,7 @@ func (v *Value) RealiseString(allowIFD bool) (buf string, pathCount int, err err
 		return "", 0, fmt.Errorf("nix: string realise failed")
 	}
 	defer rs.Free()
-	buf := rs.Buffer()
+	buf = rs.Buffer()
 	count := rs.StorePathCount()
 	if err := v.ctx.Err(); err != nil {
 		return "", 0, err
