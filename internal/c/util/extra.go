@@ -11,6 +11,10 @@ import "C"
 func ErrorInfoMsg(ctx, readContext *Context) (string, Err) {
 	var out string
 	ud := RegisterStringSlot(&out)
+	if ud == nil {
+		return "", ErrUnknown
+	}
+	defer TakeStringSlot(ud)
 	err := Err(C.nix_err_info_msg(ctx.Ptr(), readContext.Ptr(),
 		C.nix_get_string_callback(C.cgoUtilStringCB), ud))
 	return out, err
@@ -20,6 +24,10 @@ func ErrorInfoMsg(ctx, readContext *Context) (string, Err) {
 func ErrorName(ctx, readContext *Context) (string, Err) {
 	var out string
 	ud := RegisterStringSlot(&out)
+	if ud == nil {
+		return "", ErrUnknown
+	}
+	defer TakeStringSlot(ud)
 	err := Err(C.nix_err_name(ctx.Ptr(), readContext.Ptr(),
 		C.nix_get_string_callback(C.cgoUtilStringCB), ud))
 	return out, err
