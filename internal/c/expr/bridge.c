@@ -3,17 +3,11 @@
 
 void * nixgo_expr_id_to_userdata(uintptr_t id)
 {
-    uintptr_t *token = malloc(sizeof(uintptr_t));
-    if (token != NULL)
-        *token = id;
-    return token;
+    (void) id;
+    return malloc(1);
 }
 
-uintptr_t nixgo_expr_userdata_take_id(void * userdata)
+void nixgo_expr_userdata_free(void * userdata)
 {
-    if (userdata == NULL)
-        return 0;
-    uintptr_t id = *(uintptr_t *) userdata;
     free(userdata);
-    return id;
 }
