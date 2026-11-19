@@ -17,6 +17,9 @@ var (
 	_ func(*builtins.Builtins, int64, int64) (*value.Value, error) = (*builtins.Builtins).Substring
 	_ func(*builtins.Builtins, int64, int64) (*value.Value, error) = (*builtins.Builtins).BitAnd
 	_ func(*builtins.Builtins, builtins.Function, []any) (*value.Value, error) = (*builtins.Builtins).Map
+	_ func(*builtins.Builtins, string, []any) (*value.Value, error) = (*builtins.Builtins).ConcatStringsSep
+	_ func(*builtins.Builtins, string, any) (*value.Value, error) = (*builtins.Builtins).AddErrorContext
+	_ func(*builtins.Builtins, string, any) (*value.Value, error) = (*builtins.Builtins).Warn
 	_ func(*builtins.Builtins, builtins.ConvertHashArgs) (*value.Value, error) = (*builtins.Builtins).ConvertHash
 	_ func(*builtins.Builtins, builtins.FetchClosureArgs) (*value.Value, error) = (*builtins.Builtins).FetchClosure
 	_ func(*builtins.Builtins, builtins.PathArgs) (*value.Value, error) = (*builtins.Builtins).Path
