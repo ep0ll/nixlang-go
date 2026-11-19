@@ -4,7 +4,6 @@ package value
 import (
 	"errors"
 	"fmt"
-	"unsafe"
 
 	cexpr "github.com/ep0ll/nixlang-go/internal/c/expr"
 	cutil "github.com/ep0ll/nixlang-go/internal/c/util"
@@ -19,7 +18,7 @@ import (
 type PrimOpFunc func(
 	userData any,
 	ctx *util.Context,
-	state unsafe.Pointer,
+	state *PrimOpState,
 	args []*Value,
 	result *Value,
 ) error
@@ -60,7 +59,8 @@ func NewPrimOp(
 			wrappedArgs[i] = FromInternal(wrappedContext, state, arg)
 		}
 		wrappedResult := FromInternal(wrappedContext, state, result)
-		if err := fn(data, wrappedContext, unsafe.Pointer(state.Ptr()), wrappedArgs, wrappedResult); err != nil {
+		callbackState := &PrimOpState{ctx: wrappedContext, state: state}
+		if err := fn(data, wrappedContext, callbackState, wrappedArgs, wrappedResult); err != nil {
 			code := cutil.ErrUnknown
 			var nixErr *util.NixError
 			if errors.As(err, &nixErr) {
