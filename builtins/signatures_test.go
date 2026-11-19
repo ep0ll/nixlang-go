@@ -10,17 +10,17 @@ import (
 // These assignments make the exported Go signatures part of the compile-time
 // contract. In particular, simple Nix scalar arguments must not regress to any.
 var (
-	_ func(*builtins.Builtins, string, any) (*value.Value, error) = (*builtins.Builtins).HashFile
-	_ func(*builtins.Builtins, string, string) (*value.Value, error) = (*builtins.Builtins).HashString
+	_ func(*builtins.Builtins, builtins.HashAlgorithm, builtins.PathLike) (*value.Value, error) = (*builtins.Builtins).HashFile
+	_ func(*builtins.Builtins, builtins.HashAlgorithm, string) (*value.Value, error) = (*builtins.Builtins).HashString
 	_ func(*builtins.Builtins, string, string) (*value.Value, error) = (*builtins.Builtins).CompareVersions
 	_ func(*builtins.Builtins, string, string) (*value.Value, error) = (*builtins.Builtins).ToFile
 	_ func(*builtins.Builtins, int64, int64) (*value.Value, error) = (*builtins.Builtins).Substring
 	_ func(*builtins.Builtins, int64, int64) (*value.Value, error) = (*builtins.Builtins).BitAnd
 	_ func(*builtins.Builtins, builtins.Function, []any) (*value.Value, error) = (*builtins.Builtins).Map
-	_ func(*builtins.Builtins, string, []any) (*value.Value, error) = (*builtins.Builtins).ConcatStringsSep
-	_ func(*builtins.Builtins, any, any) (*value.Value, error) = (*builtins.Builtins).AddErrorContext
-	_ func(*builtins.Builtins, any) (*value.Value, error) = (*builtins.Builtins).Abort
-	_ func(*builtins.Builtins, any) (*value.Value, error) = (*builtins.Builtins).Throw
+	_ func(*builtins.Builtins, string, []builtins.StringCoercible) (*value.Value, error) = (*builtins.Builtins).ConcatStringsSep
+	_ func(*builtins.Builtins, builtins.StringCoercible, any) (*value.Value, error) = (*builtins.Builtins).AddErrorContext
+	_ func(*builtins.Builtins, builtins.StringCoercible) (*value.Value, error) = (*builtins.Builtins).Abort
+	_ func(*builtins.Builtins, builtins.StringCoercible) (*value.Value, error) = (*builtins.Builtins).Throw
 	_ func(*builtins.Builtins, string, any) (*value.Value, error) = (*builtins.Builtins).Warn
 	_ func(*builtins.Builtins, builtins.ConvertHashArgs) (*value.Value, error) = (*builtins.Builtins).ConvertHash
 	_ func(*builtins.Builtins, builtins.FetchClosureArgs) (*value.Value, error) = (*builtins.Builtins).FetchClosure
