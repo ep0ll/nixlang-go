@@ -141,6 +141,16 @@ func (e StringContextEntry) ToNixAttrs() AttrSet {
 // StringContext maps store paths to their Nix string-context metadata.
 type StringContext map[string]StringContextEntry
 
+// ToNixAttrs converts each store path entry to the attrset structure accepted
+// by builtins.appendContext.
+func (c StringContext) ToNixAttrs() AttrSet {
+	attrs := make(AttrSet, len(c))
+	for storePath, entry := range c {
+		attrs[storePath] = entry.ToNixAttrs()
+	}
+	return attrs
+}
+
 // ConvertHashArgs describes builtins.convertHash.
 type ConvertHashArgs struct {
 	Hash         string
