@@ -6,6 +6,7 @@ import (
 
 	cvalue "github.com/ep0ll/nixlang-go/internal/c/value"
 	"github.com/ep0ll/nixlang-go/util"
+	nixstore "github.com/ep0ll/nixlang-go/store"
 )
 
 // TypeName returns the Nix type name (e.g. "int", "attrs", "string").
@@ -31,4 +32,88 @@ func (v *Value) RealiseString(allowIFD bool) (buf string, pathCount int, err err
 	}
 	defer rs.Free()
 	return rs.Buffer(), rs.StorePathCount(), nil
+}
+
+
+// RealisedString owns a realised Nix string and its store-path context.
+// Call Close when finished; the finalizer is only a fallback.
+type RealisedString struct {
+	c *cvalue.RealisedString
+}
+
+// RealiseStringWithContext realises a string while preserving its referenced
+// store paths. Use StorePathAt or StorePaths to inspect those references.
+func (v *Value) RealiseStringWithContext(allowIFD bool) (*RealisedString, error) {
+	if v == nil || v.c == nil {
+		return nil, fmt.Errorf("nix: value is closed")
+	}
+	realised := cvalue.StringRealise(v.ctx.Internal(), v.state, v.c, allowIFD)
+	if realised == nil {
+		if err := v.ctx.Err(); err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("nix: string realise failed")
+	}
+	return &RealisedString{c: realised}, nil
+}
+
+// Close releases the realised string. It is idempotent.
+func (r *RealisedString) Close() {
+	if r != nil && r.c != nil {
+		r.c.Free()
+		r.c = nil
+	}
+}
+
+// String returns the realised string buffer.
+func (r *RealisedString) String() string {
+	if r == nil || r.c == nil {
+		return ""
+	}
+	return r.c.Buffer()
+}
+
+// StorePathCount returns the number of store paths in the string context.
+func (r *RealisedString) StorePathCount() int {
+	if r == nil || r.c == nil {
+		return 0
+	}
+	return r.c.StorePathCount()
+}
+
+// StorePathAt returns an owned clone of a referenced store path. The caller
+// must close the returned path.
+func (r *RealisedString) StorePathAt(index int) (*nixstore.Path, error) {
+	if r == nil || r.c == nil {
+		return nil, fmt.Errorf("nix: realised string is closed")
+	}
+	if index < 0 || index >= r.c.StorePathCount() {
+		return nil, fmt.Errorf("nix: realised string store-path index %d out of range", index)
+	}
+	cloned := cstore.ClonePath(r.c.StorePathAt(index))
+	if cloned == nil {
+		return nil, fmt.Errorf("nix: failed to clone realised string store path %d", index)
+	}
+	return nixstore.PathFromInternal(cloned), nil
+}
+
+// StorePaths returns owned clones of every store path referenced by the string.
+// The caller must close every returned path.
+func (r *RealisedString) StorePaths() ([]*nixstore.Path, error) {
+	if r == nil || r.c == nil {
+		return nil, fmt.Errorf("nix: realised string is closed")
+	}
+	count := r.c.StorePathCount()
+	paths := make([]*nixstore.Path, 0, count)
+	for i := 0; i < count; i++ {
+		path, err := r.StorePathAt(i)
+		if err != nil {
+			for _, opened := range paths {
+				opened.Close()
+			}
+			return nil, err
+		}
+		paths = append(paths, path)
+	}
+	return paths, nil
 }
