@@ -91,9 +91,11 @@ func TestTypedArgumentStructs(t *testing.T) {
 		t.Fatalf("SearchPathEntry conversion = %#v", got)
 	}
 
+	emptyToPath := builtins.StorePath("")
 	fetchClosure := builtins.FetchClosureArgs{
 		FromPath:  builtins.StorePath("/nix/store/example-source"),
 		FromStore: url.URL{Scheme: "https", Host: "cache.nixos.org"},
+		ToPath:    &emptyToPath,
 	}
 	closureAttrs := fetchClosure.ToNixAttrs()
 	if closureAttrs["toPath"] != "" || closureAttrs["fromStore"] != "https://cache.nixos.org" {
