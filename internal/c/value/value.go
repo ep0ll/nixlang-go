@@ -67,7 +67,7 @@ func WrapPtr(p unsafe.Pointer) *Value {
 		return nil
 	}
 	v := &Value{ptr: (*C.nix_value)(p), owned: true, refs: 1}
-	runtime.SetFinalizer(v, func(v *Value) { v.Decref() })
+	runtime.SetFinalizer(v, (*Value).releaseAll)
 	return v
 }
 
@@ -144,14 +144,31 @@ func (v *Value) Decref() {
 	}
 	ptr := v.ptr
 	v.refs--
-	if v.refs == 0 {
+	last := v.refs == 0
+	if last {
 		v.ptr = nil
 	}
 	v.mu.Unlock()
 
 	C.nix_value_decref(nil, ptr)
-	if v.refs == 0 {
+	if last {
 		runtime.SetFinalizer(v, nil)
+	}
+}
+
+// releaseAll is the finalizer for an owned wrapper. It balances every explicit
+// C reference if the Go wrapper becomes unreachable before callers release them.
+func (v *Value) releaseAll() {
+	if v == nil {
+		return
+	}
+	v.mu.Lock()
+	ptr, refs := v.ptr, v.refs
+	v.ptr = nil
+	v.refs = 0
+	v.mu.Unlock()
+	for i := uint32(0); i < refs; i++ {
+		C.nix_value_decref(nil, ptr)
 	}
 }
 
