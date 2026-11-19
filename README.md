@@ -164,7 +164,8 @@ converted, err := b.ConvertHash(builtins.ConvertHashArgs{
 // Higher-order functions take checked Nix function handles.
 fnValue, err := state.EvalString("x: x + 1", ".")
 fn, err := builtins.NewFunction(fnValue)
-mapped, err := b.Map(fn, []int{1, 2, 3})
+defer fn.Close()
+mapped, err := b.Map(fn, []any{1, 2, 3})
 
 // Structured path arguments, including a Nix function predicate.
 path, err := b.Path(builtins.PathArgs{
