@@ -198,6 +198,7 @@ func (v *Value) GetFloat(ctx *cutil.Context) float64 {
 func (v *Value) GetString(ctx *cutil.Context) (string, cutil.Err) {
 	var out string
 	ud := cutil.RegisterStringSlot(&out)
+	defer cutil.TakeStringSlot(ud)
 	err := cutil.FromCErr(C.nix_get_string(ctx.Ptr(), v.ptr, C.nix_get_string_callback(C.cgoValueStringCB), ud))
 	return out, err
 }
