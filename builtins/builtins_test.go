@@ -149,7 +149,10 @@ func TestRegistryAndRuntimeDiscovery(t *testing.T) {
 	foundAdd := false
 	for _, spec := range specs {
 		if spec.Name == "add" && spec.Arity == 2 {
-			foundAdd = true
+			foundAdd = len(spec.Args) == 2 &&
+				len(spec.GoTypes) == 2 &&
+				spec.GoTypes[0] == "any" &&
+				spec.GoTypes[1] == "any"
 			break
 		}
 	}
