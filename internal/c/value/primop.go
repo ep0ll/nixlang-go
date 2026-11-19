@@ -131,10 +131,7 @@ func (p *PrimOp) Register(ctx *cutil.Context) cutil.Err {
 	decrefErr := cutil.FromCErr(C.nix_gc_decref(ctx.Ptr(), unsafe.Pointer(p.ptr)))
 	p.ptr = nil
 	primOpMu.Lock()
-	id := primOpOwners[p]
 	delete(primOpOwners, p)
-	if id != 0 {
-	}
 	primOpMu.Unlock()
 	runtime.SetFinalizer(p, nil)
 	return decrefErr
