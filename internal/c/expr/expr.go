@@ -7,6 +7,7 @@ package expr
 #include <nix_api_store.h>
 #include <nix_api_util.h>
 #include <stdlib.h>
+#include "bridge.h"
 */
 import "C"
 import (
@@ -19,8 +20,9 @@ import (
 
 // EvalState wraps the Nix evaluator state.
 type EvalState struct {
-	ptr   *C.EvalState
-	owned bool
+	ptr    *C.EvalState
+	owned  bool
+	cloned bool
 }
 
 // Builder wraps nix_eval_state_builder.
@@ -137,8 +139,8 @@ func Create(ctx *cutil.Context, lookupPath []string, store *cstore.Store) *EvalS
 	return s
 }
 
-// WrapState creates a borrowed Go view of an evaluator state owned by Nix.
-// Free invalidates only the Go view and does not release the underlying state.
+// WrapState creates a borrowed Go view of an existing evaluator-state wrapper.
+// It must only be used while the source C wrapper is guaranteed to remain alive.
 func WrapState(p unsafe.Pointer) *EvalState {
 	if p == nil {
 		return nil
@@ -146,15 +148,36 @@ func WrapState(p unsafe.Pointer) *EvalState {
 	return &EvalState{ptr: (*C.EvalState)(p)}
 }
 
-// Free releases an owned EvalState. Borrowed callback views are only invalidated.
-func (s *EvalState) Free() {
-	if s != nil && s.ptr != nil {
-		if s.owned {
-			C.nix_state_free(s.ptr)
-		}
-		s.ptr = nil
-		runtime.SetFinalizer(s, nil)
+// CloneCallbackState creates a heap-allocated wrapper around the evaluator state
+// exposed temporarily to a C API primop callback. The wrapper itself is owned
+// by Go; the underlying evaluator remains owned by its parent expr.State.
+func CloneCallbackState(p unsafe.Pointer) *EvalState {
+	if p == nil {
+		return nil
 	}
+	cloned := C.nixgo_expr_clone_callback_state((*C.EvalState)(p))
+	if cloned == nil {
+		return nil
+	}
+	s := &EvalState{ptr: cloned, cloned: true}
+	runtime.SetFinalizer(s, func(s *EvalState) { s.Free() })
+	return s
+}
+
+// Free releases an owned or cloned EvalState wrapper. Ordinary borrowed views
+// are only invalidated and do not release the underlying C object.
+func (s *EvalState) Free() {
+	if s == nil || s.ptr == nil {
+		return
+	}
+	ptr := s.ptr
+	s.ptr = nil
+	if s.cloned {
+		C.nixgo_expr_free_callback_state(ptr)
+	} else if s.owned {
+		C.nix_state_free(ptr)
+	}
+	runtime.SetFinalizer(s, nil)
 }
 
 // Ptr returns the C pointer.
