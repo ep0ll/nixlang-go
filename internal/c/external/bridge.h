@@ -17,6 +17,6 @@ void nixgo_external_desc_free(NixCExternalValueDesc * desc);
 void * nixgo_external_handle_to_ptr(uintptr_t handle);
 uintptr_t nixgo_external_handle_from_ptr(void * ptr);
 void nixgo_external_handle_free(void * ptr);
-void nixgo_external_register_finalizer(void * object, uintptr_t handle);
+void nixgo_external_register_finalizer(void * object, void * userdata);
 
 #endif
