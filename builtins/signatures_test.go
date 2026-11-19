@@ -1,6 +1,7 @@
 package builtins_test
 
 import (
+	"net/url"
 	"testing"
 
 	"github.com/ep0ll/nixlang-go/builtins"
@@ -91,9 +92,8 @@ func TestTypedArgumentStructs(t *testing.T) {
 	}
 
 	fetchClosure := builtins.FetchClosureArgs{
-		FromPath:  builtins.Path("/nix/store/example-source"),
-		FromStore: "https://cache.nixos.org",
-		ToPath:    "",
+		FromPath:  builtins.StorePath("/nix/store/example-source"),
+		FromStore: url.URL{Scheme: "https", Host: "cache.nixos.org"},
 	}
 	closureAttrs := fetchClosure.ToNixAttrs()
 	if closureAttrs["toPath"] != "" || closureAttrs["fromStore"] != "https://cache.nixos.org" {
@@ -102,7 +102,7 @@ func TestTypedArgumentStructs(t *testing.T) {
 
 	shallow := true
 	fetchGit := builtins.FetchGitArgs{
-		URL:        "https://example.com/source.git",
+		URL:        &url.URL{Scheme: "https", Host: "example.com", Path: "/source.git"},
 		Rev:        "0123456789abcdef",
 		Submodules: &shallow,
 	}
@@ -113,7 +113,7 @@ func TestTypedArgumentStructs(t *testing.T) {
 
 	fetchTree := builtins.FetchTreeArgs{
 		Type:    "git",
-		URL:     "https://example.com/source.git",
+		URL:     &url.URL{Scheme: "https", Host: "example.com", Path: "/source.git"},
 		NarHash: "sha256-example",
 	}
 	treeAttrs := fetchTree.ToNixAttrs()
@@ -122,7 +122,7 @@ func TestTypedArgumentStructs(t *testing.T) {
 	}
 
 	flakeRef := builtins.FlakeRefAttrs{
-		Type:  "github",
+		Type:  builtins.FlakeRefGitHub,
 		Owner: "NixOS",
 		Repo:  "nixpkgs",
 		Ref:   "nixos-unstable",
