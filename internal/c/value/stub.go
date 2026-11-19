@@ -87,9 +87,13 @@ func (v *Value) HasAttr(ctx *cutil.Context, state *cexpr.EvalState, name string)
 func (v *Value) AttrByIdx(ctx *cutil.Context, state *cexpr.EvalState, idx uint) (string, *Value) {
 	return "", nil
 }
+func (v *Value) AttrByIdxLazy(ctx *cutil.Context, state *cexpr.EvalState, idx uint) (string, *Value) {
+	return "", nil
+}
 func (v *Value) AttrNameByIdx(ctx *cutil.Context, state *cexpr.EvalState, idx uint) string {
 	return ""
 }
+func (v *Value) InitPrimOp(ctx *cutil.Context, op *PrimOp) cutil.Err { return cutil.OK }
 func (v *Value) InitNull(ctx *cutil.Context) cutil.Err                              { return cutil.OK }
 func (v *Value) GetExternal(ctx *cutil.Context) unsafe.Pointer                      { return nil }
 func (v *Value) InitExternal(ctx *cutil.Context, external unsafe.Pointer) cutil.Err { return cutil.OK }
