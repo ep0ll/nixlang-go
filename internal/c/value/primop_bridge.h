@@ -5,5 +5,6 @@
 
 void * nixgo_primop_handle_to_ptr(uintptr_t handle);
 uintptr_t nixgo_primop_handle_from_ptr(void * ptr);
+void nixgo_primop_handle_free(void * ptr);
 
 #endif
