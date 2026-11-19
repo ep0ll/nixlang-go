@@ -76,11 +76,6 @@ jobs:
             set -euo pipefail
             export CGO_ENABLED=1
             echo "Nix: $(nix --version || true)"
-            if bash ./scripts/check-capi.sh; then
-              echo "check-capi OK"
-              go test -tags=nix ./... -count=1
-            else
-              echo "::warning::check-capi failed — falling back to CGO=0 unit tests"
-              CGO_ENABLED=0 go test ./util ./value -count=1
-            fi
+            bash ./scripts/check-capi.sh
+            go test -tags=nix ./... -count=1
           '
