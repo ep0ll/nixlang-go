@@ -21,6 +21,9 @@ var (
 	_ func(*builtins.Builtins, builtins.FetchClosureArgs) (*value.Value, error) = (*builtins.Builtins).FetchClosure
 	_ func(*builtins.Builtins, builtins.PathArgs) (*value.Value, error) = (*builtins.Builtins).Path
 	_ func(*builtins.Builtins, []builtins.SearchPathEntry, string) (*value.Value, error) = (*builtins.Builtins).FindFile
+	_ func(*builtins.Builtins, string, []builtins.AttrSet) (*value.Value, error) = (*builtins.Builtins).CatAttrs
+	_ func(*builtins.Builtins, []builtins.NameValue) (*value.Value, error) = (*builtins.Builtins).ListToAttrs
+	_ func(*builtins.Builtins, builtins.Function, []builtins.AttrSet) (*value.Value, error) = (*builtins.Builtins).ZipAttrsWith
 )
 
 func TestTypedArgumentStructs(t *testing.T) {
@@ -33,6 +36,11 @@ func TestTypedArgumentStructs(t *testing.T) {
 	}
 	if got := attrs.ToNixAttrs(); got["path"] != builtins.Path("./source") {
 		t.Fatalf("PathArgs path = %#v", got["path"])
+	}
+
+	nameValue := builtins.NameValue{Name: "answer", Value: int64(42)}
+	if got := nameValue.ToNixAttrs(); got["name"] != "answer" || got["value"] != int64(42) {
+		t.Fatalf("NameValue conversion = %#v", got)
 	}
 
 	context := builtins.StringContext{
