@@ -1,91 +1,49 @@
-# nixgo — Production Go bindings for the Nix C API
+# nixgo — Go bindings for the Nix C API
 
-Idiomatic, production-ready Go bindings for the experimental [Nix C API](https://nix.dev/manual/nix/latest/c-api.html) (master branch).
+Idiomatic Go wrappers for the public, experimental Nix C API. The project links against Nix's exported C libraries with cgo; it does not reimplement the Nix evaluator or bind directly to Nix's internal C++ classes.
+
+## Scope
+
+This is not a complete C++ binding of the Nix codebase. Nix's C++ internals, CLI, daemon protocols, and APIs that are not exported by the public C API are outside the binding surface. The goal is to expose the published nix_api_*.h interfaces to Go, with low-level cgo packages and higher-level Go wrappers.
+
+The feat/full-cgo-bindings branch expands coverage across the current libutil-c, libstore-c, libexpr-c, libfetchers-c, libflake-c, and libmain-c headers. It includes evaluator values and builders, custom primops, external-value callbacks, GC hooks, derivation inspection, store closure traversal, fetcher settings, flakes, and main-library setup. The scripts/check-capi.sh script audits the declared function names in the installed headers against the cgo call sites.
+
+The upstream C API is experimental and may change between Nix revisions. Pin the Nix revision used to build the bindings and run the C API checks against that exact revision.
 
 ## Design
 
 | Layer | Package path | Role |
 |-------|--------------|------|
-| Low-level cgo | `internal/c/{util,store,expr,value,external,fetchers,flake,nixmain}` | Thin C bindings |
-| High-level | `util`, `store`, `expr`, `value`, `external`, `fetchers`, `flake`, `nixmain` | Safe Go APIs |
+| Low-level cgo | internal/c/{util,store,expr,value,external,fetchers,flake,nixmain} | Thin bindings to Nix C functions |
+| High-level | util, store, expr, value, external, fetchers, flake, nixmain | Typed Go APIs and resource wrappers |
 
-**This library evaluates Nix expressions and talks to stores/flakes programmatically.** It does **not** shell out to `nix build`, `nix develop`, or other CLI commands.
+The library evaluates expressions and talks to stores and flakes through Nix libraries. It does not shell out to nix build, nix develop, or other CLI commands.
 
 ## Requirements
 
 - Go 1.22+
-- CGO enabled
-- Nix master (or release shipping C API libs) with development headers
-- `pkg-config` for: `nix-util-c`, `nix-store-c`, `nix-expr-c`, `nix-fetchers-c`, `nix-flake-c`, `nix-main-c`
+- CGO enabled for Nix integration
+- Nix with the corresponding C API development headers and libraries
+- pkg-config entries for nix-util-c, nix-store-c, nix-expr-c, nix-fetchers-c, nix-flake-c, and nix-main-c
 
-```bash
-nix develop   # from this flake
-go test -tags=nix ./...
-go run ./examples/eval
-```
-
-## Quick start
-
-```go
-package main
-
-import (
-	"fmt"
-	"log"
-
-	"github.com/ep0ll/nixlang-go/expr"
-	"github.com/ep0ll/nixlang-go/store"
-	"github.com/ep0ll/nixlang-go/util"
-)
-
-func main() {
-	ctx := util.NewContext()
-	defer ctx.Close()
-
-	must(util.Init(ctx))
-	must(store.Init(ctx))
-	must(expr.Init(ctx))
-
-	st, err := store.Open(ctx, "dummy://", nil)
-	must(err)
-	defer st.Close()
-
-	state, err := expr.NewState(ctx, st, nil)
-	must(err)
-	defer state.Close()
-
-	v, err := state.EvalString(`builtins.toJSON { answer = 6 * 7; }`, ".")
-	must(err)
-	defer v.Close()
-
-	s, err := v.String()
-	must(err)
-	fmt.Println(s) // {"answer":42}
-}
-
-func must(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-```
+Run nix develop, then ./scripts/check-capi.sh and go test -tags=nix ./...
 
 ## Packages
 
 | Package | Capabilities |
 |---------|--------------|
-| **util** | Context, errors, settings, version, verbosity |
-| **store** | Open store, paths, realise, closures, derivations, copy |
-| **expr** | EvalState builder, EvalString, Call, CallMulti |
-| **value** | Force, typed get/set, lists, attrs, builders |
-| **fetchers** | Fetcher settings |
-| **flake** | Settings, parse refs, lock modes, output attrs |
-| **external** | Foreign values |
-| **nixmain** | Plugins, log format (named to avoid `package main` clash) |
+| util | Contexts, structured errors, settings, version, verbosity |
+| store | Stores, paths, closure traversal, realise, derivations, copy |
+| expr | EvalState builders, evaluation, function calls, derivation inspection |
+| value | Typed values, lists, attrs, builders, retained values, custom primops |
+| external | Go-backed Nix external values and callback descriptors |
+| fetchers | Fetcher settings |
+| flake | Flake settings, reference parsing, locking, output attrs |
+| nixmain | Plugin initialization and log format |
 
-## Stability
+## Resource lifetime
 
-The upstream C API is **experimental**. Pin the Nix revision via `flake.lock`.
+Close contexts, stores, states, values, descriptors, and other owned handles when finished. Finalizers are only a fallback. Values passed to primop and external-value callbacks are borrowed for the duration of the callback; use Value.Retain or the relevant Wrap API when a reference must outlive it.
 
 ## License
 
