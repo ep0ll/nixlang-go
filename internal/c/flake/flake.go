@@ -181,6 +181,7 @@ func ParseReference(
 	var out *C.nix_flake_reference
 	var frag string
 	ud := cutil.RegisterStringSlot(&frag)
+	defer cutil.TakeStringSlot(ud)
 	cs := C.CString(str)
 	defer C.free(unsafe.Pointer(cs))
 	e := C.nix_flake_reference_and_fragment_from_string(
