@@ -185,7 +185,7 @@ func (s *EvalState) Free() {
 
 // Same reports whether two wrappers refer to the same underlying evaluator.
 func (s *EvalState) Same(other *EvalState) bool {
-	return s != nil && other != nil && s.identity != nil && s.identity == other.identity
+	return s != nil && other != nil && s.ptr != nil && other.ptr != nil && s.identity != nil && s.identity == other.identity
 }
 
 // Ptr returns the C pointer.
