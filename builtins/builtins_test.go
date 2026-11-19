@@ -3,6 +3,7 @@
 package builtins_test
 
 import (
+	"strings"
 	"testing"
 
 	nixbuiltins "github.com/ep0ll/nixlang-go/builtins"
