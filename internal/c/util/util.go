@@ -6,7 +6,6 @@ package util
 #include <nix_api_util.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <stdlib.h>
 
 static inline void * nixgo_util_userdata_new(uintptr_t id) {
 	uintptr_t *token = (uintptr_t *) malloc(sizeof(uintptr_t));
