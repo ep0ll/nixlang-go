@@ -100,7 +100,7 @@ func AllocPrimOp(
 // Register adds this primop to the global builtins registry for subsequently
 // created evaluator states. Nix takes ownership of the primop's contents.
 func (p *PrimOp) Register(ctx *cutil.Context) cutil.Err {
-	if p == nil || p.ptr == nil {
+	if p == nil || p.ptr == nil || p.retained {
 		return cutil.ErrUnknown
 	}
 	err := cutil.FromCErr(C.nix_register_primop(ctx.Ptr(), p.ptr))
