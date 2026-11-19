@@ -62,7 +62,11 @@ func (s *Store) GetFSClosure(
 		return cutil.ErrUnknown
 	}
 	if cb == nil {
-		cb = func(*StorePath) {}
+		cb = func(path *StorePath) {
+			if path != nil {
+				path.Free()
+			}
+		}
 	}
 	id := registerFSClosureCallback(cb)
 	defer unregisterFSClosureCallback(id)
