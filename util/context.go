@@ -12,12 +12,13 @@ import (
 // Context holds Nix error state for a sequence of API calls.
 // Safe for sequential use from a single goroutine.
 type Context struct {
-	c *cutil.Context
+	c     *cutil.Context
+	owned bool
 }
 
 // NewContext creates a new error context. Call Close when finished.
 func NewContext() *Context {
-	return &Context{c: cutil.NewContext()}
+	return &Context{c: cutil.NewContext(), owned: true}
 }
 
 // Close frees the context. Idempotent.
@@ -26,6 +27,12 @@ func (ctx *Context) Close() {
 		ctx.c.Free()
 		ctx.c = nil
 	}
+}
+
+// IsBorrowed reports whether this wrapper refers to a context whose lifetime
+// is controlled by a Nix callback rather than by Go.
+func (ctx *Context) IsBorrowed() bool {
+	return ctx != nil && !ctx.owned
 }
 
 // Internal returns the low-level context for sibling packages.
