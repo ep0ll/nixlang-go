@@ -27,7 +27,7 @@ fi
 
 mapfile -t header_paths < <(
   for dir in "${include_dirs[@]}"; do
-    find "$dir" -type f -name 'nix_api*.h' ! -name '*_internal.h' -print
+    find "$dir" -type f \\( -name 'nix_api*.h' -o -path '*/nix_api_store/*.h' \\) ! -name '*_internal.h' -print
   done | sort -u
 )
 if [ "${#header_paths[@]}" -eq 0 ]; then
