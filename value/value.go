@@ -44,7 +44,8 @@ func (t Type) String() string {
 type Value struct {
 	c     *cvalue.Value
 	state *cexpr.EvalState
-	ctx   *util.Context
+	ctx         *util.Context
+	ownsContext bool
 }
 
 // FromInternal wraps a low-level value (used by expr and flake packages).
@@ -57,10 +58,16 @@ func FromInternal(ctx *util.Context, state *cexpr.EvalState, cv *cvalue.Value) *
 
 // Close decrements the GC reference. Idempotent.
 func (v *Value) Close() {
-	if v != nil && v.c != nil {
-		v.c.Decref()
-		v.c = nil
-	}
+	if v != nil {
+		if v.c != nil {
+			v.c.Decref()
+			v.c = nil
+		}
+		if v.ownsContext && v.ctx != nil {
+			v.ctx.Close()
+			v.ctx = nil
+			v.ownsContext = false
+		}
 }
 
 // Internal returns the low-level value.
