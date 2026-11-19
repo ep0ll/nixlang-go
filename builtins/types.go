@@ -133,7 +133,7 @@ func (a GenericClosureArgs) ToNixAttrs() AttrSet {
 type FetchClosureArgs struct {
 	FromPath       Path
 	FromStore      string
-	ToPath         *Path
+	ToPath         any
 	InputAddressed *bool
 }
 
@@ -143,7 +143,7 @@ func (a FetchClosureArgs) ToNixAttrs() AttrSet {
 		attrs["fromStore"] = a.FromStore
 	}
 	if a.ToPath != nil {
-		attrs["toPath"] = *a.ToPath
+		attrs["toPath"] = a.ToPath
 	}
 	if a.InputAddressed != nil {
 		attrs["inputAddressed"] = *a.InputAddressed
